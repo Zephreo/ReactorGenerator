@@ -51,8 +51,9 @@ public class Location {
 			int newZ = loc.z + z;
 			if(withinBounds(newX, newY, newZ, max)) {
 				out.add(locations[newX][newY][newZ]);
+			} else {
+				out.add(null);
 			}
-			out.add(null);
 		}
 		return out;
 	}

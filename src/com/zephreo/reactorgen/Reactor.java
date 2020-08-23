@@ -16,10 +16,6 @@ public class Reactor {
 	
 	Random rnd = new Random();
 	
-	float totalCooling = 0;
-	float genericPower = 0; 
-	float genericHeat = 0;
-	
 	public Reactor(Location size) {
 		this.size = size;
 		locations = new Location[size.x][size.y][size.z];
@@ -150,27 +146,7 @@ public class Reactor {
 	}
 	
 	public boolean adjacentTo(Location loc, int num, Block block) {
-		if(num <= 0) {
-			return true;
-		}
-		for(Location adjPos : loc.getAdjacent(locations, size)) {
-			if(adjPos != null) {
-				if(blocks.get(adjPos).equals(block)) {
-					num--;
-					if(num == 0) {
-						return true;
-					}
-				}
-			} else {
-				if(block.getType() == BlockType.CASING) {
-					num--;
-					if(num == 0) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
+		return adjacentTo(loc, block) >= num;
 	}
 	
 	public int adjacentTo(Location loc, CoolerType type) {
@@ -214,9 +190,33 @@ public class Reactor {
 		return blocks.get(loc) == block;
 	}
 	
-	float evaluate(int targetHeat) {
+	class ReactorResult {
 		int reactorCells = 0;
 		int air = 0;
+		
+		float totalCooling = 0;
+		float genericPower = 0; 
+		float genericHeat = 0;
+		
+		float efficiency = 0;
+		float symmetryFactor = 0;
+		float maxHeat = 0;
+		
+		float score = 0;
+		
+		void print() {
+			pr("totalCooling: " + totalCooling + "\n");
+			pr("genericPower: " + genericPower + "\n");
+			pr("genericHeat: " + genericHeat + "\n");
+			pr("efficiency: " + efficiency + "\n");
+			pr("symmetryFactor: " + symmetryFactor + "\n");
+			pr("maxHeat: " + maxHeat + "\n");
+			pr("score: " + score + "\n");
+		}
+	}
+	
+	ReactorResult evaluate(int targetHeat) {
+		ReactorResult res = new ReactorResult();
 		
 		for(Location loc : blocks.keySet()) {
 			Block block = blocks.get(loc);
@@ -224,40 +224,64 @@ public class Reactor {
 			case REACTOR_CELL:
 				int adjCells = adjacentTo(loc, BlockType.REACTOR_CELL);
 				int adjMods = adjacentTo(loc, BlockType.MODERATOR);
-				genericPower += (1 + adjCells) + (1 + adjCells) * (adjMods / 6.0);
-				genericHeat += (adjCells + 1) * (adjCells + 2) / 2.0 + (1 + adjCells) * (adjMods / 3.0);
-				reactorCells += 1;
+				res.genericPower += (1 + adjCells) + (1 + adjCells) * (adjMods / 6.0);
+				res.genericHeat += (adjCells + 1) * (adjCells + 2) / 2.0 + (1 + adjCells) * (adjMods / 3.0);
+				res.reactorCells += 1;
 				break;
 			case COOLER:
 				Cooler cooler = (Cooler) block;
-				totalCooling += cooler.getCoolerType().strength;
+				res.totalCooling += cooler.getCoolerType().strength;
 				break;
 			case MODERATOR:
 				if(!adjacentTo(loc, 1, BlockType.REACTOR_CELL)) {
-					genericHeat += 1;
+					res.genericHeat += 1;
 				}
 				break;
 			case AIR:
-				air++;
+				res.air++;
 				break;
 			default:
 				break;
 			}
 		}
+        
+		for(int x = 0; x < size.y; x++) {
+			for(int y = 0; y < size.x; y++) {
+				for(int z = 0; z < size.z; z++) {
+					//Swap x - y
+					if(blocks.get(locations[x][y][z]) == blocks.get(locations[y][x][z])) {
+						res.symmetryFactor += 1;
+					}
+					//Swap x - z
+					if(blocks.get(locations[x][y][z]) == blocks.get(locations[z][y][x])) {
+						res.symmetryFactor += 1;
+					}
+					//Swap y - z
+					if(blocks.get(locations[x][y][z]) == blocks.get(locations[x][z][y])) {
+						res.symmetryFactor += 1;
+					}
+                }
+            }
+        }
 		
-		float score; /*= genericPower * 10 + genericHeat;
-		if(targetHeat > totalCooling) {
-			score -= targetHeat - totalCooling;
-		} //*/
+		res.symmetryFactor = res.symmetryFactor / (size.count() * 3);
 		
-		score = (float) (genericPower / reactorCells);
-		score += genericPower / 10 + genericHeat / 30;
-		score -= air * 2;
+		res.maxHeat = res.totalCooling / res.genericHeat;
+
+		res.efficiency = (float) (res.genericPower / res.reactorCells);
+		res.score = res.efficiency
+				+ res.symmetryFactor * 7
+				+ res.genericPower / 10 + res.genericHeat / 50
+				- res.air;
 		
-		return score;
+		if(targetHeat > res.maxHeat) {
+			res.score -= targetHeat - res.maxHeat;
+		}
+		
+		return res;
 	}
 	
-	public void print() {
+	public void print(int targetHeat) {
 		pr("START-----------------------------------------------------------\n");
 		for(int x = 0; x < size.y; x++) {
 			for(int y = 0; y < size.x; y++) {
@@ -269,10 +293,7 @@ public class Reactor {
 			}
 			pr("-----------------------------------------------------------\n");
 		}
-		evaluate(0);
-		pr("totalCooling: " + totalCooling + "\n");
-		pr("genericPower: " + genericPower + "\n");
-		pr("genericHeat: " + genericHeat + "\n");
+		evaluate(targetHeat).print();
 	}
 	
 	public static void pr(Object message) {
