@@ -3,9 +3,11 @@
  */
 package com.zephreo.reactorgen;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 import com.zephreo.reactorgen.Block.BlockType;
+import com.zephreo.reactorgen.Cooler.CoolerType;
 
 /**
  * @author Zephreo
@@ -15,7 +17,16 @@ public class ReactorGenerator {
 	
 	static final int targetHeat = 360;
 	
-	
+	static {
+		Reactor.disabledCoolers.addAll(Arrays.asList(
+				CoolerType.ACTIVE_CRYOTHIUM,
+				CoolerType.ACTIVE_WATER,
+				CoolerType.WATER,
+				CoolerType.LAPIS,
+				CoolerType.REDSTONE));
+		
+		CoolerType.setup();
+	}
 
 	/**
 	 * @param args
@@ -32,7 +43,7 @@ public class ReactorGenerator {
 
 		     @Override
 		     public void run() {
-		    	 Location size = new Location(5, 5, 5);
+		    	 Location size = new Location(3, 3, 3);
 		 		
 		 		float bestScore = -9999;
 		 		

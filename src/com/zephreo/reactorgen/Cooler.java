@@ -1,8 +1,6 @@
 package com.zephreo.reactorgen;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Random;
 
 public interface Cooler extends Block {
@@ -16,7 +14,7 @@ public interface Cooler extends Block {
 		LAPIS(120),
 		DIAMOND(150),
 		LIQUID_HELIUM(140),
-		ENDERIUM(120),
+		ENDERIUM(120, 2),
 		CRYOTHEUM(160),
 		IRON(80),
 		EMERALD(160),
@@ -28,8 +26,15 @@ public interface Cooler extends Block {
 		
 		final Cooler cooler;
 		int strength;
-		public static final List<CoolerType> VALUES = Collections.unmodifiableList(Arrays.asList(values()));
-		public static final int SIZE = VALUES.size();
+		public static final ArrayList<CoolerType> VALUES = new ArrayList<CoolerType>();
+		public static int SIZE;
+		private int weight = 1;
+		
+		CoolerType(int strength, int weight) {
+			this.strength = strength;
+			this.weight = weight;
+			cooler = new CoolerFactory(this);
+		}
 		
 		CoolerType(int strength) {
 			this.strength = strength;
@@ -40,7 +45,14 @@ public interface Cooler extends Block {
 			return cooler;
 		}
 		
-		
+		static void setup() {
+			for(CoolerType type : values()) {
+				for(int i = 0; i < type.weight; i++) {
+					VALUES.add(type);
+				}
+			}
+			SIZE = VALUES.size();
+		}
 		
 		private class CoolerFactory implements Cooler {
 

@@ -16,6 +16,8 @@ public class Reactor {
 	
 	Random rnd = new Random();
 	
+	public static final HashSet<CoolerType> disabledCoolers = new HashSet<CoolerType>();
+	
 	public Reactor(Location size) {
 		this.size = size;
 		locations = new Location[size.x][size.y][size.z];
@@ -33,7 +35,11 @@ public class Reactor {
 	
 	public void addRandomCoolers(int count) {
 		for(int i = 0; i < count; i++) {
-			addRandomBlocks(0, 5, Cooler.getRandom(rnd));
+			Cooler cooler = Cooler.getRandom(rnd);
+			while(disabledCoolers.contains(cooler.getCoolerType())) {
+				cooler = Cooler.getRandom(rnd);
+			}
+			addRandomBlocks(0, 5, cooler);
 		}
 	}
 	
@@ -98,9 +104,12 @@ public class Reactor {
 	}
 	
 	public boolean validateCooler(Location loc, Cooler cooler) {
+		if(disabledCoolers.contains(cooler.getCoolerType())) {
+			return false;
+		}
 		switch(cooler.getCoolerType()) {
 		case ACTIVE_CRYOTHIUM:
-			break;
+			return false;
 		case ACTIVE_WATER:
 			return false; //adjacentTo(loc, 1, BlockType.AIR);
 		case COPPER:
@@ -218,6 +227,8 @@ public class Reactor {
 	ReactorResult evaluate(int targetHeat) {
 		ReactorResult res = new ReactorResult();
 		
+		//Count cells and air
+		//Calculate genericPower, genericHeat, totalCooling
 		for(Location loc : blocks.keySet()) {
 			Block block = blocks.get(loc);
 			switch(block.getType()) {
@@ -245,9 +256,22 @@ public class Reactor {
 			}
 		}
         
-		for(int x = 0; x < size.y; x++) {
-			for(int y = 0; y < size.x; y++) {
+		//Symmetry
+		for(int x = 0; x < size.x; x++) {
+			for(int y = 0; y < size.y; y++) {
 				for(int z = 0; z < size.z; z++) {
+					//X
+					if(blocks.get(locations[x][y][z]) == blocks.get(locations[size.x - 1 - x][y][z])) {
+						res.symmetryFactor += 1;
+					}
+					//Y
+					if(blocks.get(locations[x][y][z]) == blocks.get(locations[x][size.y - 1 - y][z])) {
+						res.symmetryFactor += 1;
+					}
+					//Z
+					if(blocks.get(locations[x][y][z]) == blocks.get(locations[x][y][size.z - 1 - z])) {
+						res.symmetryFactor += 1;
+					}
 					//Swap x - y
 					if(blocks.get(locations[x][y][z]) == blocks.get(locations[y][x][z])) {
 						res.symmetryFactor += 1;
@@ -263,17 +287,21 @@ public class Reactor {
                 }
             }
         }
+		//Normalise
+		res.symmetryFactor = res.symmetryFactor / (size.count() * 6);
 		
-		res.symmetryFactor = res.symmetryFactor / (size.count() * 3);
-		
+		//The maximum base heat a fuel can have for safe operation
 		res.maxHeat = res.totalCooling / res.genericHeat;
 
+		//NaN if reactor cells are 0.
 		res.efficiency = (float) (res.genericPower / res.reactorCells);
+		
 		res.score = res.efficiency
-				+ res.symmetryFactor * 7
+				+ res.symmetryFactor * 10
 				+ res.genericPower / 10 + res.genericHeat / 50
 				- res.air;
 		
+		//Penalise heat being below target
 		if(targetHeat > res.maxHeat) {
 			res.score -= targetHeat - res.maxHeat;
 		}
