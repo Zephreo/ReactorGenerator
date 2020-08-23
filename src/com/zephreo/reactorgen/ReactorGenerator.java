@@ -3,7 +3,6 @@
  */
 package com.zephreo.reactorgen;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.zephreo.reactorgen.Block.BlockType;
@@ -12,7 +11,7 @@ import com.zephreo.reactorgen.Block.BlockType;
  * @author Zephreo
  *
  */
-public class ReactorGen {
+public class ReactorGenerator {
 	
 	static final int targetHeat = 150;
 	

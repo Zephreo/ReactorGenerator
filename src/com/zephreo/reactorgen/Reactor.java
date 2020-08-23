@@ -107,8 +107,6 @@ public class Reactor {
 			break;
 		case ACTIVE_WATER:
 			return false; //adjacentTo(loc, 1, BlockType.AIR);
-		case AIR:
-			return true;
 		case COPPER:
 			return adjacentTo(loc, 1, CoolerType.GLOWSTONE);
 		case CRYOTHEUM:
@@ -252,7 +250,10 @@ public class Reactor {
 			score -= targetHeat - totalCooling;
 		} //*/
 		
-		score = (float) (genericPower / reactorCells) + genericPower / 10 + genericHeat / 30 - air * 5;
+		score = (float) (genericPower / reactorCells);
+		score += genericPower / 10 + genericHeat / 30;
+		score -= air * 2;
+		
 		return score;
 	}
 	

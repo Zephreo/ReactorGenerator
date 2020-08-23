@@ -8,7 +8,6 @@ import java.util.Random;
 public interface Cooler extends Block {
 	
 	public enum CoolerType {
-		AIR(0),
 		WATER(60),
 		REDSTONE(90),
 		QUARTZ(90),
