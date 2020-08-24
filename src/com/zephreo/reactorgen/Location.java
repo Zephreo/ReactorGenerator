@@ -1,5 +1,6 @@
 package com.zephreo.reactorgen;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
 public class Location {
@@ -39,12 +40,12 @@ public class Location {
 		this.z = z;
 	}
 	
-	public HashSet<Location> getAdjacent(Location[][][] locations, Location max) {
+	public ArrayList<Location> getAdjacent(Location[][][] locations, Location max) {
 		return add(RELATIVE_ADJ, locations, max);
 	}
 	
-	public HashSet<Location> add(HashSet<Location> locs, Location[][][] locations, Location max) {
-		HashSet<Location> out = new HashSet<Location>();
+	public ArrayList<Location> add(HashSet<Location> locs, Location[][][] locations, Location max) {
+		ArrayList<Location> out = new ArrayList<Location>();
 		for(Location loc : locs) {
 			int newX = loc.x + x;
 			int newY = loc.y + y;

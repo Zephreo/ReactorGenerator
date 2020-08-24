@@ -1,5 +1,6 @@
 package com.zephreo.reactorgen;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
@@ -16,7 +17,7 @@ public class Reactor {
 	
 	Random rnd = new Random();
 	
-	public static final HashSet<CoolerType> disabledCoolers = new HashSet<CoolerType>();
+	public static final HashSet<CoolerType> DISABLED_COOLERS = new HashSet<CoolerType>();
 	
 	public Reactor(Location size) {
 		this.size = size;
@@ -36,7 +37,7 @@ public class Reactor {
 	public void addRandomCoolers(int count) {
 		for(int i = 0; i < count; i++) {
 			Cooler cooler = Cooler.getRandom(rnd);
-			while(disabledCoolers.contains(cooler.getCoolerType())) {
+			while(DISABLED_COOLERS.contains(cooler.getCoolerType())) {
 				cooler = Cooler.getRandom(rnd);
 			}
 			addRandomBlocks(0, 5, cooler);
@@ -104,7 +105,7 @@ public class Reactor {
 	}
 	
 	public boolean validateCooler(Location loc, Cooler cooler) {
-		if(disabledCoolers.contains(cooler.getCoolerType())) {
+		if(DISABLED_COOLERS.contains(cooler.getCoolerType())) {
 			return false;
 		}
 		switch(cooler.getCoolerType()) {
@@ -186,7 +187,7 @@ public class Reactor {
 		return isHere(block, loc.add(Location.RELATIVE_X, locations, size)) || isHere(block, loc.add(Location.RELATIVE_Y, locations, size)) || isHere(block, loc.add(Location.RELATIVE_Z, locations, size));
 	}
 	
-	boolean isHere(Block block, HashSet<Location> area) {
+	boolean isHere(Block block, ArrayList<Location> area) {
 		for(Location loc : area) {
 			if(!isHere(block, loc)) {
 				return false;
@@ -296,10 +297,11 @@ public class Reactor {
 		//NaN if reactor cells are 0.
 		res.efficiency = (float) (res.genericPower / res.reactorCells);
 		
-		res.score = res.efficiency
-				+ res.symmetryFactor * 10
-				+ res.genericPower / 10 + res.genericHeat / 50
-				- res.air;
+		res.score = res.efficiency * ReactorGenerator.MUTLTIPLIER_EFFICIENCY
+				+ res.symmetryFactor * ReactorGenerator.MUTLTIPLIER_SYMMETRY
+				+ (res.genericPower / 10) * ReactorGenerator.MUTLTIPLIER_POWER
+				+ (res.genericHeat / 10) * ReactorGenerator.MUTLTIPLIER_HEAT
+				+ res.air * ReactorGenerator.MUTLTIPLIER_AIR;
 		
 		//Penalise heat being below target
 		if(targetHeat > res.maxHeat) {
