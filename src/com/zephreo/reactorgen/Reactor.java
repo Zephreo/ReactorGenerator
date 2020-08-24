@@ -7,39 +7,31 @@ import java.util.Random;
 
 import com.zephreo.reactorgen.Block.BlockType;
 import com.zephreo.reactorgen.Cooler.CoolerType;
+import com.zephreo.reactorgen.QInt.QIntType;
 
 public class Reactor {
 	
-	Location size;
+	//ReactorGenerator generator;
 	
-	Location locations[][][];
+	static Location size;
+	
+	static Location locations[][][];
+	static HashMap<Location, Block> empty = new HashMap<Location, Block>();
+	
 	HashMap<Location, Block> blocks = new HashMap<Location, Block>();
 	
 	Random rnd = new Random();
 	
 	public static final HashSet<CoolerType> DISABLED_COOLERS = new HashSet<CoolerType>();
 	
-	public Reactor(Location size) {
-		this.size = size;
-		locations = new Location[size.x][size.y][size.z];
-		for(int x = 0; x < size.y; x++) {
-			for(int y = 0; y < size.x; y++) {
-				for(int z = 0; z < size.z; z++) {
-					Location loc = new Location(x, y, z);
-					blocks.put(loc, BlockType.AIR.toBlock());
-					locations[x][y][z] = loc;
-				}
-			}
-		}
+	public Reactor() {
+		//this.generator = generator;
 		//rnd.setSeed(123);
 	}
 	
 	public void addRandomCoolers(int count) {
 		for(int i = 0; i < count; i++) {
 			Cooler cooler = Cooler.getRandom(rnd);
-			while(DISABLED_COOLERS.contains(cooler.getCoolerType())) {
-				cooler = Cooler.getRandom(rnd);
-			}
 			addRandomBlocks(0, 5, cooler);
 		}
 	}
@@ -60,11 +52,109 @@ public class Reactor {
 		int num = rnd.nextInt(max - min + 1) + min;
 		for(; num >= 0; num--) {
 			Location rndLoc = getRandomLoc();
+			if(rndLoc == null) {
+				return;
+			}
 			if(validate(rndLoc, block)) {
 				addBlock(block, rndLoc);
 				validateAdj(rndLoc);
 			}
 		}
+	}
+	
+	QLocation suggestLoc(Block block) {
+		switch(block.getType()) {
+		case AIR:
+			return new QLocation(locations, size, new QInt(QIntType.RANGE, 0, size.x), new QInt(QIntType.RANGE, 0, size.y), new QInt(QIntType.RANGE, 0, size.z));
+		case COOLER:
+			switch(((Cooler) block).getCoolerType()) {
+			case ACTIVE_CRYOTHIUM:
+				return getEdges();
+			case ACTIVE_WATER:
+				return getEdges();
+			case COPPER:
+				return getBlockAdjTo(CoolerType.GLOWSTONE);
+			case CRYOTHEUM:
+				return getBlockAdjTo(BlockType.REACTOR_CELL.toBlock(), 2);
+			case DIAMOND:
+				return getBlockAdjTo(CoolerType.WATER).and(getBlockAdjTo(CoolerType.QUARTZ));
+			case EMERALD:
+				return getBlockAdjTo(BlockType.REACTOR_CELL).and(getBlockAdjTo(BlockType.MODERATOR));
+			case ENDERIUM:
+				return getCorners();
+			case GLOWSTONE:
+				return getBlockAdjTo(BlockType.MODERATOR.toBlock(), 2);
+			case GOLD:
+				return getBlockAdjTo(CoolerType.WATER).and(getBlockAdjTo(CoolerType.REDSTONE));
+			case IRON:
+				return getBlockAdjTo(CoolerType.GOLD);
+			case LAPIS:
+				return getBlockAdjTo(BlockType.REACTOR_CELL).and(getEdges());
+			case LIQUID_HELIUM:
+				return getEdges().and(getBlock(CoolerType.REDSTONE.toBlock()).getAdjacent(false).discard(new QInt(1)));
+			case MAGNESIUM:
+				return getEdges().and(getBlockAdjTo(BlockType.MODERATOR));
+			case QUARTZ:
+				return getBlockAdjTo(BlockType.MODERATOR);
+			case REDSTONE:
+				return getBlockAdjTo(BlockType.REACTOR_CELL);
+			case TIN:
+				break;
+			case WATER:
+				break;
+			default:
+				break;
+			}
+			break;
+		case MODERATOR:
+			break;
+		case REACTOR_CELL:
+			break;
+		default:
+			break;
+		}
+		return new QLocation(locations, size);
+	}
+	
+	QLocation getEdges() {
+		//X-Y Edges
+		QLocation edges = new QLocation(locations, size, new QInt(QIntType.RANGE, 0, size.x), new QInt(QIntType.RANGE, 0, size.y), new QInt(0, size.z - 1));
+		//X-Z Edges
+		edges.add(new QLocation(locations, size, new QInt(QIntType.RANGE, 0, size.x), new QInt(0, size.y - 1), new QInt(QIntType.RANGE, 0, size.z)), true);
+		//Y-Z Edges
+		edges.add(new QLocation(locations, size, new QInt(0, size.x - 1), new QInt(QIntType.RANGE, 0, size.y), new QInt(QIntType.RANGE, 0, size.z)), true);
+		
+		return edges;
+	}
+	
+	QLocation getCorners() {
+		return new QLocation(locations, size, new QInt(0, size.x - 1), new QInt(0, size.y - 1), new QInt(0, size.z - 1));
+	}
+	
+	QLocation getBlockAdjTo(CoolerType block) {
+		return getBlock(block.toBlock()).getAdjacent(true);
+	}
+	
+	QLocation getBlockAdjTo(BlockType block) {
+		return getBlock(block.toBlock()).getAdjacent(true);
+	}
+	
+	QLocation getBlockAdjTo(Block block) {
+		return getBlock(block).getAdjacent(true);
+	}
+	
+	QLocation getBlockAdjTo(Block block, int num) {
+		return getBlock(block).getAdjacent(false).discard(num);
+	}
+	
+	QLocation getBlock(Block block) {
+		QLocation out = new QLocation(locations, size);
+		for(Location loc : blocks.keySet()) {
+			if(blocks.get(loc).equals(block)) {
+				out.add(loc);
+			}
+		}
+		return out;
 	}
 	
 	public Location getRandomLoc() {
@@ -85,6 +175,9 @@ public class Reactor {
 	}
 	
 	public boolean validate(Location loc, Block block) {
+		if(block == null) {
+			return false;
+		}
 		switch(block.getType()) {
 		case AIR:
 			return true;
@@ -204,7 +297,7 @@ public class Reactor {
 		int reactorCells = 0;
 		int air = 0;
 		
-		float totalCooling = 0;
+		int totalCooling = 0;
 		float genericPower = 0; 
 		float genericHeat = 0;
 		

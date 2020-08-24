@@ -5,25 +5,25 @@ import java.util.HashSet;
 
 public class Location {
 	
-	static final HashSet<Location> RELATIVE_X = new HashSet<Location>();
+	protected static final HashSet<Location> RELATIVE_X = new HashSet<Location>();
 	static {
 		RELATIVE_X.add(new Location(1, 0, 0));
 		RELATIVE_X.add(new Location(-1, 0, 0));
 	}
 	
-	static final HashSet<Location> RELATIVE_Y = new HashSet<Location>();
+	protected static final HashSet<Location> RELATIVE_Y = new HashSet<Location>();
 	static {
 		RELATIVE_Y.add(new Location(0, 1, 0));
 		RELATIVE_Y.add(new Location(0, -1, 0));
 	}
 	
-	static final HashSet<Location> RELATIVE_Z = new HashSet<Location>();
+	protected static final HashSet<Location> RELATIVE_Z = new HashSet<Location>();
 	static {
 		RELATIVE_Z.add(new Location(0, 0, 1));
 		RELATIVE_Z.add(new Location(0, 0, -1));
 	}
 	
-	private static final HashSet<Location> RELATIVE_ADJ = new HashSet<Location>();
+	protected static final HashSet<Location> RELATIVE_ADJ = new HashSet<Location>();
 	static {
 		RELATIVE_ADJ.addAll(RELATIVE_X);
 		RELATIVE_ADJ.addAll(RELATIVE_Y);
@@ -67,7 +67,7 @@ public class Location {
 		return val >= 0 && val < max;
 	}
 	
-	public boolean withinBounds(int x, int y, int z, Location max) {
+	public static boolean withinBounds(int x, int y, int z, Location max) {
 		return withinBounds(x, max.x) && withinBounds(y, max.y) && withinBounds(z, max.z);
 	}
 	

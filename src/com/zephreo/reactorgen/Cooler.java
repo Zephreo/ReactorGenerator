@@ -1,7 +1,10 @@
 package com.zephreo.reactorgen;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
+
+import com.zephreo.reactorgen.Cooler.CoolerType;
 
 public interface Cooler extends Block {
 	
@@ -14,15 +17,15 @@ public interface Cooler extends Block {
 		LAPIS(120),
 		DIAMOND(150),
 		LIQUID_HELIUM(140),
-		ENDERIUM(120, 2),
+		ENDERIUM(120),
 		CRYOTHEUM(160),
 		IRON(80),
 		EMERALD(160),
 		COPPER(80),
 		TIN(120),
 		MAGNESIUM(110),
-		ACTIVE_WATER(150),
-		ACTIVE_CRYOTHIUM(6400);
+		ACTIVE_WATER(150, 0),
+		ACTIVE_CRYOTHIUM(6400, 0);
 		
 		final Cooler cooler;
 		int strength;
@@ -45,10 +48,12 @@ public interface Cooler extends Block {
 			return cooler;
 		}
 		
-		static void setup() {
+		static void setup(HashSet<CoolerType> disabledCoolers) {
 			for(CoolerType type : values()) {
-				for(int i = 0; i < type.weight; i++) {
-					VALUES.add(type);
+				if(!disabledCoolers.contains(type)) {
+					for(int i = 0; i < type.weight; i++) {
+						VALUES.add(type);
+					}
 				}
 			}
 			SIZE = VALUES.size();

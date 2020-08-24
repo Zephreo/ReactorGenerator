@@ -2,9 +2,6 @@ package com.zephreo.reactorgen;
 
 public enum FuelType {
 /*
- * enum struct FuelType {
-  air = 0,
-  generic,
   TBU, TBUO, // 3
   LEU233, LEU233O, // 5
   HEU233, HEU233O, // 7
@@ -31,7 +28,6 @@ public enum FuelType {
   HECf249, HECf249O, // 49
   LECf251, LECf251O, // 51
   HECf251, HECf251O, // 53
-  FUEL_TYPE_MAX
 };
  */
 	TBU,

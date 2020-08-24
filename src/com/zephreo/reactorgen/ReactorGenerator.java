@@ -28,7 +28,20 @@ public class ReactorGenerator {
 				CoolerType.ACTIVE_WATER,
 				CoolerType.ENDERIUM));
 		
-		CoolerType.setup();
+		CoolerType.setup(Reactor.DISABLED_COOLERS);
+		
+		//Setup reactor defaults
+		Reactor.size = SIZE;
+		Reactor.locations = new Location[SIZE.x][SIZE.y][SIZE.z];
+		for(int x = 0; x < SIZE.x; x++) {
+			for(int y = 0; y < SIZE.y; y++) {
+				for(int z = 0; z < SIZE.z; z++) {
+					Location loc = new Location(x, y, z);
+					Reactor.empty.put(loc, BlockType.AIR.toBlock());
+					Reactor.locations[x][y][z] = loc;
+				}
+			}
+		}
 	}
 	
 	//Score multipliers
@@ -85,13 +98,14 @@ public class ReactorGenerator {
 	public static class Generator implements Runnable {
 	     private volatile Reactor bestReactor = null;
 	     private volatile int progress = 0;
+	     ReactorGenerator generator;
 
 	     @Override
 	     public void run() {
 	 		float bestScore = -9999;
 	 		
 	 		for(int j = 0; j < ITERATIONS; j++) {
-	 			Reactor reactor = new Reactor(SIZE);
+	 			Reactor reactor = new Reactor();
 	 			reactor.addRandomCells();
 	 			reactor.addRandomBlocks(BlockType.MODERATOR.toBlock());
 	 			reactor.addRandomCoolers(SIZE.count() * 4);
