@@ -89,11 +89,17 @@ public class ReactorGenerator {
 		
 		bestReactor.print(TARGET_HEAT);
 		
-		for(int i = 0; i < 1000; i++) {
-			Action action = RL.RLcalc(bestReactor, bestReactor.getAll(), TARGET_HEAT);
+		Reactor old = bestReactor.clone();
+		
+		int RLiterations = 1000;
+		QLocation all = bestReactor.getAll();
+		for(int i = 0; i < RLiterations; i++) {
+			Action action = RL.RLcalc(bestReactor, all, TARGET_HEAT);
 			action.submit(bestReactor);
+			pr(round((i / (float) RLiterations) * 100, 1) + "%");
 		}
 		
+		old.print(TARGET_HEAT);
 		bestReactor.print(TARGET_HEAT);
 	}
 	

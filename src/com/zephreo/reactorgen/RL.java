@@ -9,17 +9,17 @@ import com.zephreo.reactorgen.Reactor.ReactorResult;
 
 public class RL {
 	
-	static HashMap<State, HashMap<Action, Float>> RLTable = new HashMap<State, HashMap<Action, Float>>();
+	static HashMap<Integer, HashMap<Action, Float>> RLTable = new HashMap<Integer, HashMap<Action, Float>>();
 
-	static Action RLcalc(Reactor reactor, QLocation posbLocs, int targetHeat) throws Exception {
+	static Action RLcalc(Reactor reactor, QLocation posbLocs, int targetHeat) {
 		float bestScore = -Float.MAX_VALUE;
 		Action bestAction = null;
 		
 		for(Location loc : posbLocs.posbLocations.keySet()) {
 			State state = new State(reactor.clone(), targetHeat, loc);
 			
-			if(RLTable.containsKey(state)) {
-				HashMap<Action, Float> posbActions = RLTable.get(state);
+			if(RLTable.containsKey(state.hashCode())) {
+				HashMap<Action, Float> posbActions = RLTable.get(state.hashCode());
 				for(Action action : posbActions.keySet()) {
 					float score = posbActions.get(action) + action.newScore(state);
 					posbActions.put(action, score);
@@ -27,9 +27,7 @@ public class RL {
 						bestScore = score;
 						bestAction = action;
 					}
-					ReactorGenerator.pr(action);
 				}
-				ReactorGenerator.pr("---------FROMTABLE::::: " + bestAction);
 			} else {
 				HashMap<Action, Float> posbActions = new HashMap<Action, Float>();
 				for(BlockType blockType : BlockType.values()) {
@@ -55,7 +53,7 @@ public class RL {
 						}
 					}
 				}
-				RLTable.put(state, posbActions);
+				RLTable.put(state.hashCode(), posbActions);
 			}
 		}
 		
