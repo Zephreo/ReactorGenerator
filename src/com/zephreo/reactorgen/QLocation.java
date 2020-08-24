@@ -63,14 +63,15 @@ public class QLocation {
 		add(toAdd, false);
 	}
 	
-	public void add(QLocation toAdd, boolean noWeight) {
-		add(toAdd.posbLocations.keySet(), noWeight);
+	public QLocation add(QLocation toAdd, boolean noWeight) {
+		return add(toAdd.posbLocations.keySet(), noWeight);
 	}
 	
-	public void add(Collection<Location> toAdd, boolean noWeight) {
+	public QLocation add(Collection<Location> toAdd, boolean noWeight) {
 		for(Location loc : toAdd) {
 			add(loc, noWeight);
 		}
+		return this;
 	}
 
 	public Location collapse() {

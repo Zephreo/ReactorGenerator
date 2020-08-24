@@ -56,7 +56,7 @@ public class Location {
 	}
 	
 	public String toString() {
-		return "[" + x + ", " + y + ", " + z + "]";
+		return (x + 1) + "," + (y + 1) + "," + (z + 1);
 	}
 	
 	public static boolean withinBounds(int val, int max) {
@@ -91,4 +91,8 @@ public class Location {
     public int hashCode() {   
     	return (int) (x + y * 25 + z * 25 * 25);
     }
+
+	public Object toString(boolean b) {
+		return x + "," + y + "," + z;
+	}
 }

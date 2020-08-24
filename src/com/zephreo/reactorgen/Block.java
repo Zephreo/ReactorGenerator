@@ -1,10 +1,12 @@
 package com.zephreo.reactorgen;
 
+import com.zephreo.reactorgen.Cooler.CoolerType;
+
 public interface Block {
 	
 	public enum BlockType {
 		AIR,
-		REACTOR_CELL,
+		FUEL_CELL,
 		MODERATOR,
 		COOLER,
 		CASING;
@@ -17,6 +19,13 @@ public interface Block {
 		
 		Block toBlock() {
 			return block;
+		}
+		
+		public String toString() {
+			if(this == BlockType.MODERATOR) {
+				return "Graphite";
+			}
+			return ReactorGenerator.toTitleCase(this.name()).replace("_", "");
 		}
 		
 		private class BlockFactory implements Block {
@@ -32,9 +41,26 @@ public interface Block {
 			}
 			
 			public String toString() {
-				return getType().toString();
+				return type.toString();
 			}
+			
+			
 		}
+	}
+	
+	public static Block fromString(String string) throws Exception {
+		string = string.replaceAll("(.)([A-Z])", "$1 $2").trim().replace(" ", "");
+	    for(BlockType enumValue : BlockType.values()) {
+	        if(enumValue.toString().equalsIgnoreCase(string)) {
+	            return enumValue.toBlock();
+	        }
+	    }
+	    for(CoolerType enumValue : CoolerType.values()) {
+	        if(enumValue.toString().equalsIgnoreCase(string)) {
+	            return enumValue.toBlock();
+	        }
+	    }
+	    return null;
 	}
 	
 	public BlockType getType();

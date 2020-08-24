@@ -14,7 +14,7 @@ public interface Cooler extends Block {
 		GLOWSTONE(130),
 		LAPIS(120),
 		DIAMOND(150),
-		LIQUID_HELIUM(140),
+		HELIUM(140),
 		ENDERIUM(120),
 		CRYOTHEUM(160),
 		IRON(80),
@@ -75,7 +75,7 @@ public interface Cooler extends Block {
 			}
 			
 			public String toString() {
-				return getCoolerType().toString();
+				return ReactorGenerator.toTitleCase(getCoolerType().toString()).replace("_", "");
 			}
 		}
 	}

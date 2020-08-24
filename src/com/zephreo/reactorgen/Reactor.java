@@ -36,11 +36,11 @@ public class Reactor {
 	}
 	
 	public void addRandomCells() {
-		addRandomBlocks(BlockType.REACTOR_CELL.toBlock());
+		addRandomBlocks(BlockType.FUEL_CELL.toBlock());
 	}
 	
 	public void addRandomCells(int min, int max) {
-		addRandomBlocks(min, max, BlockType.REACTOR_CELL.toBlock());
+		addRandomBlocks(min, max, BlockType.FUEL_CELL.toBlock());
 	}
 	
 	public void addRandomBlocks(Block block) {
@@ -74,11 +74,11 @@ public class Reactor {
 			case COPPER:
 				return getBlockAdjTo(CoolerType.GLOWSTONE);
 			case CRYOTHEUM:
-				return getBlockAdjTo(BlockType.REACTOR_CELL.toBlock(), 2);
+				return getBlockAdjTo(BlockType.FUEL_CELL.toBlock(), 2);
 			case DIAMOND:
 				return getBlockAdjTo(CoolerType.WATER).and(getBlockAdjTo(CoolerType.QUARTZ));
 			case EMERALD:
-				return getBlockAdjTo(BlockType.REACTOR_CELL).and(getBlockAdjTo(BlockType.MODERATOR));
+				return getBlockAdjTo(BlockType.FUEL_CELL).and(getBlockAdjTo(BlockType.MODERATOR));
 			case ENDERIUM:
 				return getCorners();
 			case GLOWSTONE:
@@ -88,26 +88,26 @@ public class Reactor {
 			case IRON:
 				return getBlockAdjTo(CoolerType.GOLD);
 			case LAPIS:
-				return getBlockAdjTo(BlockType.REACTOR_CELL).and(getEdges());
-			case LIQUID_HELIUM:
+				return getBlockAdjTo(BlockType.FUEL_CELL).and(getEdges());
+			case HELIUM:
 				return getEdges().and(getBlock(CoolerType.REDSTONE.toBlock()).getAdjacent(false).discard(new QInt(1)));
 			case MAGNESIUM:
 				return getEdges().and(getBlockAdjTo(BlockType.MODERATOR));
 			case QUARTZ:
 				return getBlockAdjTo(BlockType.MODERATOR);
 			case REDSTONE:
-				return getBlockAdjTo(BlockType.REACTOR_CELL);
+				return getBlockAdjTo(BlockType.FUEL_CELL);
 			case TIN:
 				break;
 			case WATER:
-				break;
+				return getBlockAdjTo(BlockType.FUEL_CELL).add(getBlockAdjTo(BlockType.MODERATOR), true);
 			default:
 				break;
 			}
 			break;
 		case MODERATOR:
 			break;
-		case REACTOR_CELL:
+		case FUEL_CELL:
 			break;
 		default:
 			break;
@@ -187,8 +187,8 @@ public class Reactor {
 		case COOLER:
 			return validateCooler(loc, (Cooler) block);
 		case MODERATOR:
-			return adjacentTo(loc, 1, BlockType.REACTOR_CELL);
-		case REACTOR_CELL:
+			return adjacentTo(loc, 1, BlockType.FUEL_CELL);
+		case FUEL_CELL:
 			return true;
 		case CASING:
 			return true;
@@ -212,11 +212,11 @@ public class Reactor {
 		case COPPER:
 			return adjacentTo(loc, 1, CoolerType.GLOWSTONE);
 		case CRYOTHEUM:
-			return adjacentTo(loc, 2, BlockType.REACTOR_CELL);
+			return adjacentTo(loc, 2, BlockType.FUEL_CELL);
 		case DIAMOND:
 			return adjacentTo(loc, 1, CoolerType.WATER) && adjacentTo(loc, 1, CoolerType.QUARTZ);
 		case EMERALD:
-			return adjacentTo(loc, 1, BlockType.REACTOR_CELL) && adjacentTo(loc, 1, BlockType.MODERATOR);
+			return adjacentTo(loc, 1, BlockType.FUEL_CELL) && adjacentTo(loc, 1, BlockType.MODERATOR);
 		case ENDERIUM:
 			return adjacentTo(loc, BlockType.CASING) == 3;
 		case GLOWSTONE:
@@ -226,19 +226,19 @@ public class Reactor {
 		case IRON:
 			return adjacentTo(loc, 1, CoolerType.GOLD);
 		case LAPIS:
-			return adjacentTo(loc, 1, BlockType.REACTOR_CELL) && adjacentTo(loc, 1, BlockType.CASING);
-		case LIQUID_HELIUM:
-			return adjacentTo(loc, CoolerType.REDSTONE) == 1 && adjacentTo(loc, 1, BlockType.CASING);
+			return adjacentTo(loc, 1, BlockType.FUEL_CELL) && adjacentTo(loc, 1, BlockType.CASING);
+		case HELIUM:
+			return adjacentTo(loc, CoolerType.REDSTONE) == 1 && !adjacentTo(loc, 2, CoolerType.REDSTONE) && adjacentTo(loc, 1, BlockType.CASING);
 		case MAGNESIUM:
 			return adjacentTo(loc, 1, BlockType.MODERATOR) && adjacentTo(loc, 1, BlockType.CASING);
 		case QUARTZ:
 			return adjacentTo(loc, 1, BlockType.MODERATOR);
 		case REDSTONE:
-			return adjacentTo(loc, 1, BlockType.REACTOR_CELL);
+			return adjacentTo(loc, 1, BlockType.FUEL_CELL);
 		case TIN:
 			return inlineWith(loc, CoolerType.LAPIS.toBlock());
 		case WATER:
-			return adjacentTo(loc, 1, BlockType.REACTOR_CELL) || adjacentTo(loc, 1, BlockType.MODERATOR);
+			return adjacentTo(loc, 1, BlockType.FUEL_CELL) || adjacentTo(loc, 1, BlockType.MODERATOR);
 		}
 		return false;
 	}
@@ -323,8 +323,8 @@ public class Reactor {
 		for(Location loc : blocks.keySet()) {
 			Block block = blocks.get(loc);
 			switch(block.getType()) {
-			case REACTOR_CELL:
-				int adjCells = adjacentTo(loc, BlockType.REACTOR_CELL);
+			case FUEL_CELL:
+				int adjCells = adjacentTo(loc, BlockType.FUEL_CELL);
 				int adjMods = adjacentTo(loc, BlockType.MODERATOR);
 				res.genericPower += (1 + adjCells) + (1 + adjCells) * (adjMods / 6.0);
 				res.genericHeat += (adjCells + 1) * (adjCells + 2) / 2.0 + (1 + adjCells) * (adjMods / 3.0);
@@ -335,7 +335,7 @@ public class Reactor {
 				res.totalCooling += cooler.getCoolerType().strength;
 				break;
 			case MODERATOR:
-				if(!adjacentTo(loc, 1, BlockType.REACTOR_CELL)) {
+				if(!adjacentTo(loc, 1, BlockType.FUEL_CELL)) {
 					res.genericHeat += 1;
 				}
 				break;
@@ -415,6 +415,7 @@ public class Reactor {
 			pr("-----------------------------------------------------------\n");
 		}
 		evaluate(targetHeat).print();
+		pr(ReactorGenerator.toJson(this) + "\n");
 	}
 	
 	public static void pr(Object message) {
