@@ -8,12 +8,10 @@ public class QLocation {
 	
 	static Random rnd = new Random();
 	
-	Location[][][] locations;
 	Location max;
 	HashMap<Location, Integer> posbLocations = new HashMap<Location, Integer>();
 
-	public QLocation(Location[][][] locations, Location max, QInt posbX, QInt posbY, QInt posbZ) {
-		this.locations = locations;
+	public QLocation(Location max, QInt posbX, QInt posbY, QInt posbZ) {
 		this.max = max;
 		
 		for(int x : posbX.posbInts) {
@@ -25,8 +23,7 @@ public class QLocation {
 		}
 	}
 	
-	public QLocation(Location[][][] locations, Location max) {
-		this.locations = locations;
+	public QLocation(Location max) {
 		this.max = max;
 	}
 	
@@ -59,7 +56,7 @@ public class QLocation {
 	}
 	 
 	public void add(int x, int y, int z) {
-		add(locations[x][y][z]);
+		add(new Location(x, y, z));
 	}
 	
 	public void add(Collection<Location> toAdd) {
@@ -84,9 +81,9 @@ public class QLocation {
 	}
 	
 	public QLocation getAdjacent(boolean noWeight) {
-		QLocation out = new QLocation(locations, max);
+		QLocation out = new QLocation(max);
 		for(Location loc : posbLocations.keySet()) {
-			out.add(loc.getAdjacent(locations, max), noWeight);
+			out.add(loc.getAdjacent(max), noWeight);
 		}
 		return out;
 	}
@@ -97,7 +94,7 @@ public class QLocation {
 	 * @param weight
 	 */
 	public QLocation discard(int weight) {
-		QLocation out = new QLocation(locations, max);
+		QLocation out = new QLocation(max);
 		for(Location loc : posbLocations.keySet()) {
 			if(posbLocations.get(loc) >= weight) {
 				out.add(loc);
@@ -112,7 +109,7 @@ public class QLocation {
 	 * @param weight
 	 */
 	public QLocation discard(QInt weight) {
-		QLocation out = new QLocation(locations, max);
+		QLocation out = new QLocation(max);
 		for(Location loc : posbLocations.keySet()) {
 			if(weight.contains(posbLocations.get(loc))) {
 				out.add(loc);

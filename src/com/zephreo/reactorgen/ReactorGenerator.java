@@ -8,6 +8,7 @@ import java.util.HashMap;
 
 import com.zephreo.reactorgen.Block.BlockType;
 import com.zephreo.reactorgen.Cooler.CoolerType;
+import com.zephreo.reactorgen.RL.Action;
 
 /**
  * @author Zephreo
@@ -32,13 +33,11 @@ public class ReactorGenerator {
 		
 		//Setup reactor defaults
 		Reactor.size = SIZE;
-		Reactor.locations = new Location[SIZE.x][SIZE.y][SIZE.z];
 		for(int x = 0; x < SIZE.x; x++) {
 			for(int y = 0; y < SIZE.y; y++) {
 				for(int z = 0; z < SIZE.z; z++) {
 					Location loc = new Location(x, y, z);
 					Reactor.empty.put(loc, BlockType.AIR.toBlock());
-					Reactor.locations[x][y][z] = loc;
 				}
 			}
 		}
@@ -53,9 +52,9 @@ public class ReactorGenerator {
 
 	/**
 	 * @param args
-	 * @throws InterruptedException 
+	 * @throws Exception 
 	 */
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws Exception {
 		
 		HashMap<Thread, Generator> threads = new HashMap<Thread, Generator>();
 		Reactor bestReactor = null;
@@ -86,6 +85,13 @@ public class ReactorGenerator {
 				bestScore = score;
 				bestReactor = reactor;
 			}
+		}
+		
+		bestReactor.print(TARGET_HEAT);
+		
+		for(int i = 0; i < 1000; i++) {
+			Action action = RL.RLcalc(bestReactor, bestReactor.getAll(), TARGET_HEAT);
+			action.submit(bestReactor);
 		}
 		
 		bestReactor.print(TARGET_HEAT);

@@ -40,21 +40,17 @@ public class Location {
 		this.z = z;
 	}
 	
-	public ArrayList<Location> getAdjacent(Location[][][] locations, Location max) {
-		return add(RELATIVE_ADJ, locations, max);
+	public ArrayList<Location> getAdjacent(Location max) {
+		return add(RELATIVE_ADJ, max);
 	}
 	
-	public ArrayList<Location> add(HashSet<Location> locs, Location[][][] locations, Location max) {
+	public ArrayList<Location> add(HashSet<Location> locs, Location max) {
 		ArrayList<Location> out = new ArrayList<Location>();
 		for(Location loc : locs) {
 			int newX = loc.x + x;
 			int newY = loc.y + y;
 			int newZ = loc.z + z;
-			if(withinBounds(newX, newY, newZ, max)) {
-				out.add(locations[newX][newY][newZ]);
-			} else {
-				out.add(null);
-			}
+			out.add(new Location(newX, newY, newZ));
 		}
 		return out;
 	}
@@ -78,4 +74,21 @@ public class Location {
 	int count() {
 		return x * y * z;
 	}
+	
+	@Override    
+    public boolean equals(Object o) { 
+		if(o instanceof Location) {
+			Location loc = (Location) o;
+			return loc.x == x && loc.y == y && loc.z == z;
+		}
+		return false;
+	}    
+	
+	/**
+	 * Unique given (x, y, z) < 24
+	 */
+    @Override    
+    public int hashCode() {   
+    	return (int) (x + y * 25 + z * 25 * 25);
+    }
 }

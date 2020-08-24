@@ -15,7 +15,6 @@ public class Reactor {
 	
 	static Location size;
 	
-	static Location locations[][][];
 	static HashMap<Location, Block> empty = new HashMap<Location, Block>();
 	
 	HashMap<Location, Block> blocks = new HashMap<Location, Block>();
@@ -65,7 +64,7 @@ public class Reactor {
 	QLocation suggestLoc(Block block) {
 		switch(block.getType()) {
 		case AIR:
-			return new QLocation(locations, size, new QInt(QIntType.RANGE, 0, size.x), new QInt(QIntType.RANGE, 0, size.y), new QInt(QIntType.RANGE, 0, size.z));
+			return getAll();
 		case COOLER:
 			switch(((Cooler) block).getCoolerType()) {
 			case ACTIVE_CRYOTHIUM:
@@ -113,22 +112,26 @@ public class Reactor {
 		default:
 			break;
 		}
-		return new QLocation(locations, size);
+		return new QLocation(size);
+	}
+	
+	QLocation getAll() {
+		return new QLocation(size, new QInt(QIntType.RANGE, 0, size.x), new QInt(QIntType.RANGE, 0, size.y), new QInt(QIntType.RANGE, 0, size.z));
 	}
 	
 	QLocation getEdges() {
 		//X-Y Edges
-		QLocation edges = new QLocation(locations, size, new QInt(QIntType.RANGE, 0, size.x), new QInt(QIntType.RANGE, 0, size.y), new QInt(0, size.z - 1));
+		QLocation edges = new QLocation(size, new QInt(QIntType.RANGE, 0, size.x), new QInt(QIntType.RANGE, 0, size.y), new QInt(0, size.z - 1));
 		//X-Z Edges
-		edges.add(new QLocation(locations, size, new QInt(QIntType.RANGE, 0, size.x), new QInt(0, size.y - 1), new QInt(QIntType.RANGE, 0, size.z)), true);
+		edges.add(new QLocation(size, new QInt(QIntType.RANGE, 0, size.x), new QInt(0, size.y - 1), new QInt(QIntType.RANGE, 0, size.z)), true);
 		//Y-Z Edges
-		edges.add(new QLocation(locations, size, new QInt(0, size.x - 1), new QInt(QIntType.RANGE, 0, size.y), new QInt(QIntType.RANGE, 0, size.z)), true);
+		edges.add(new QLocation(size, new QInt(0, size.x - 1), new QInt(QIntType.RANGE, 0, size.y), new QInt(QIntType.RANGE, 0, size.z)), true);
 		
 		return edges;
 	}
 	
 	QLocation getCorners() {
-		return new QLocation(locations, size, new QInt(0, size.x - 1), new QInt(0, size.y - 1), new QInt(0, size.z - 1));
+		return new QLocation(size, new QInt(0, size.x - 1), new QInt(0, size.y - 1), new QInt(0, size.z - 1));
 	}
 	
 	QLocation getBlockAdjTo(CoolerType block) {
@@ -148,7 +151,7 @@ public class Reactor {
 	}
 	
 	QLocation getBlock(Block block) {
-		QLocation out = new QLocation(locations, size);
+		QLocation out = new QLocation(size);
 		for(Location loc : blocks.keySet()) {
 			if(blocks.get(loc).equals(block)) {
 				out.add(loc);
@@ -158,7 +161,7 @@ public class Reactor {
 	}
 	
 	public Location getRandomLoc() {
-		return locations[rnd.nextInt(size.x)][rnd.nextInt(size.y)][rnd.nextInt(size.z)];
+		return new Location(rnd.nextInt(size.x), rnd.nextInt(size.y), rnd.nextInt(size.z));
 	}
 	
 	public void addBlock(Block block, Location loc) {
@@ -166,8 +169,8 @@ public class Reactor {
 	}
 	
 	public void validateAdj(Location loc) {
-		for(Location adjLoc : loc.getAdjacent(locations, size)) {
-			if(adjLoc != null && !validate(adjLoc)) {
+		for(Location adjLoc : loc.getAdjacent(size)) {
+			if(adjLoc.withinBounds(size) && !validate(adjLoc)) {
 				addBlock(BlockType.AIR.toBlock(), adjLoc);
 				validateAdj(adjLoc);
 			}
@@ -262,22 +265,16 @@ public class Reactor {
 	
 	public int adjacentTo(Location loc, Block block) {
 		int num = 0;
-		for(Location adjPos : loc.getAdjacent(locations, size)) {
-			if(adjPos != null) {
-				if(blocks.get(adjPos).equals(block)) {
-					num++;
-				}
-			} else {
-				if(block.getType() == BlockType.CASING) {
-					num++;
-				}
+		for(Location adjPos : loc.getAdjacent(size)) {
+			if(blocks.getOrDefault(adjPos, BlockType.CASING.toBlock()).equals(block)) {
+				num++;
 			}
 		}
 		return num;
 	}
 	
 	boolean inlineWith(Location loc, Block block) {
-		return isHere(block, loc.add(Location.RELATIVE_X, locations, size)) || isHere(block, loc.add(Location.RELATIVE_Y, locations, size)) || isHere(block, loc.add(Location.RELATIVE_Z, locations, size));
+		return isHere(block, loc.add(Location.RELATIVE_X, size)) || isHere(block, loc.add(Location.RELATIVE_Y, size)) || isHere(block, loc.add(Location.RELATIVE_Z, size));
 	}
 	
 	boolean isHere(Block block, ArrayList<Location> area) {
@@ -354,28 +351,29 @@ public class Reactor {
 		for(int x = 0; x < size.x; x++) {
 			for(int y = 0; y < size.y; y++) {
 				for(int z = 0; z < size.z; z++) {
+					Location xyz = new Location(x, y, z);
 					//X
-					if(blocks.get(locations[x][y][z]) == blocks.get(locations[size.x - 1 - x][y][z])) {
+					if(blocks.get(xyz) == blocks.get(new Location(size.x - 1 - x, y, z))) {
 						res.symmetryFactor += 1;
 					}
 					//Y
-					if(blocks.get(locations[x][y][z]) == blocks.get(locations[x][size.y - 1 - y][z])) {
+					if(blocks.get(xyz) == blocks.get(new Location(x, size.y - 1 - y, z))) {
 						res.symmetryFactor += 1;
 					}
-					//Z
-					if(blocks.get(locations[x][y][z]) == blocks.get(locations[x][y][size.z - 1 - z])) {
+					//Zsize.x - 1 - x
+					if(blocks.get(xyz) == blocks.get(new Location(x, y, size.z - 1 - z))) {
 						res.symmetryFactor += 1;
 					}
 					//Swap x - y
-					if(blocks.get(locations[x][y][z]) == blocks.get(locations[y][x][z])) {
+					if(blocks.get(xyz) == blocks.get(new Location(y, x, z))) {
 						res.symmetryFactor += 1;
 					}
 					//Swap x - z
-					if(blocks.get(locations[x][y][z]) == blocks.get(locations[z][y][x])) {
+					if(blocks.get(xyz) == blocks.get(new Location(z, y, x))) {
 						res.symmetryFactor += 1;
 					}
 					//Swap y - z
-					if(blocks.get(locations[x][y][z]) == blocks.get(locations[x][z][y])) {
+					if(blocks.get(xyz) == blocks.get(new Location(x, z, y))) {
 						res.symmetryFactor += 1;
 					}
                 }
@@ -409,7 +407,7 @@ public class Reactor {
 		for(int x = 0; x < size.y; x++) {
 			for(int y = 0; y < size.x; y++) {
 				for(int z = 0; z < size.z; z++) {
-					Block block = blocks.get(locations[x][y][z]);
+					Block block = blocks.get(new Location(x, y, z));
 					System.out.format("%15s", block.toString());
 				}
 				pr("\n");
@@ -422,4 +420,13 @@ public class Reactor {
 	public static void pr(Object message) {
 		System.out.print(message);
 	}
+	
+	@SuppressWarnings("unchecked")
+	public Reactor clone() {
+		Reactor clone = new Reactor();
+		clone.blocks = (HashMap<Location, Block>) blocks.clone();
+		return clone;
+	}
+	
+	
 }

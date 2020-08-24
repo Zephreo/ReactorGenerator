@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
-import com.zephreo.reactorgen.Cooler.CoolerType;
-
 public interface Cooler extends Block {
 	
 	public enum CoolerType {
