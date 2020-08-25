@@ -6,11 +6,33 @@ import java.util.Map.Entry;
 
 import com.zephreo.reactorgen.Block.BlockType;
 import com.zephreo.reactorgen.Cooler.CoolerType;
-import com.zephreo.reactorgen.Reactor.ReactorResult;
 
 public class RL {
 	
+	static HashMap<HashMap<Location, Block>, Float> cachedScores = new HashMap<HashMap<Location, Block>, Float>();
 	static HashMap<String, HashMap<Action, Float>> RLTable = new HashMap<String, HashMap<Action, Float>>();
+	
+	static HashSet<Block> allBlocks = new HashSet<Block>();
+	static {
+		for(BlockType blockType : BlockType.values()) {
+			switch (blockType) {
+			case CASING:
+				break;
+			case COOLER:
+				for(CoolerType cooler : CoolerType.values()) {
+					allBlocks.add(cooler.toBlock());
+				}
+				break;
+			default:
+				allBlocks.add(blockType.toBlock());
+				break;
+			}
+		}
+
+		for(CoolerType disabled : Reactor.DISABLED_COOLERS) {
+			allBlocks.remove(disabled.toBlock());
+		}
+	}
 
 	static Action RLcalc(Reactor reactor, QLocation posbLocs, int targetHeat) {
 		float bestScore = -Float.MAX_VALUE;
@@ -21,6 +43,7 @@ public class RL {
 			
 			if(RLTable.containsKey(state.toString())) {
 				HashMap<Action, Float> posbActions = RLTable.get(state.toString());
+				
 				for(Action action : posbActions.keySet()) {
 					if(reactor.validate(loc, action.blockChanged)) {
 						float score = posbActions.get(action) + action.newScore(state);
@@ -34,28 +57,13 @@ public class RL {
 				}
 			} else {
 				HashMap<Action, Float> posbActions = new HashMap<Action, Float>();
-				for(BlockType blockType : BlockType.values()) {
-					HashSet<Block> blocks = new HashSet<Block>();
-					switch (blockType) {
-					case CASING:
-						break;
-					case COOLER:
-						for(CoolerType cooler : CoolerType.VALUES) {
-							blocks.add(cooler.toBlock());
-						}
-						break;
-					default:
-						blocks.add(blockType.toBlock());
-						break;
-					}
-					for(Block block : blocks) {
-						if(reactor.validate(loc, block)) {
-							Action action = new Action(state, block);
-							posbActions.put(action, action.score);
-							if(action.score > bestScore) {
-								bestScore = action.score;
-								bestAction = action;
-							}
+				for(Block block : allBlocks) {
+					if(reactor.validate(loc, block)) {
+						Action action = new Action(state, block);
+						posbActions.put(action, action.score);
+						if(action.score > bestScore) {
+							bestScore = action.score;
+							bestAction = action;
 						}
 					}
 				}
@@ -88,7 +96,7 @@ public class RL {
 			//Action data
 			HashMap<Action, Float> acc = new HashMap<Action, Float>();
 			String[] actionData = strs[3].split(",");
-			for(int i = 0; i < actionData.length; i += 2) {
+			for(int i = 0; i < actionData.length; i++) {
 				String[] spl = actionData[i].split("=");
 				Block block = Block.fromString(spl[0]);
 				acc.put(new Action(block), Float.parseFloat(spl[1]));
@@ -96,6 +104,21 @@ public class RL {
 			
 			RLTable.put(surrounding.toString(), acc);
 		}
+	}
+	
+	static int cache = 0;
+	static int calc = 0;
+	
+	static float getScore(Reactor r, int targetHeat) {
+		if(!cachedScores.containsKey(r.blocks)) {
+			calc++;
+			float score = r.evaluate(targetHeat).score;
+			cachedScores.put(r.blocks, score);
+			return score;
+		} else {
+			cache++;
+		}
+		return cachedScores.get(r.blocks);
 	}
 	
 	static class Action {
@@ -109,7 +132,7 @@ public class RL {
 			
 			Reactor r = state.r.clone();
 			r.addBlock(block, state.loc);
-			score = r.evaluate(state.targetHeat).score - state.res.score;
+			score = getScore(r, state.targetHeat) - getScore(state.r, state.targetHeat);
 		}
 		
 		Action(Block block) {
@@ -119,7 +142,7 @@ public class RL {
 		float newScore(State state) {
 			Reactor r = state.r.clone();
 			r.addBlock(blockChanged, state.loc);
-			score = r.evaluate(state.targetHeat).score - state.res.score;
+			score = getScore(r, state.targetHeat) - getScore(state.r, state.targetHeat);
 			return score;
 		}
 		
@@ -131,7 +154,7 @@ public class RL {
 	    public boolean equals(Object o) { 
 			if(o instanceof Action) {
 				Action act = (Action) o;
-				return state.equals(act.state) && blockChanged.equals(act.blockChanged);
+				return blockChanged.equals(act.blockChanged);
 			}
 			return false;
 		}    
@@ -150,7 +173,6 @@ public class RL {
 	static class State {
 		HashMap<Block, Integer> surrounding = new HashMap<Block, Integer>();
 		Location loc;
-		ReactorResult res;
 		Reactor r;
 		int targetHeat;
 		
@@ -158,7 +180,6 @@ public class RL {
 			this.loc = loc;
 			this.targetHeat = targetHeat;
 			r = reactor;
-			res = reactor.evaluate(targetHeat);
 			calcSurrounding(loc);
 		}
 		

@@ -28,6 +28,10 @@ public class Reactor {
 		//rnd.setSeed(123);
 	}
 	
+	public Reactor(HashMap<Location, Block> blocks) {
+		this.blocks = blocks;
+	}
+	
 	public void addRandomCoolers(int count) {
 		for(int i = 0; i < count; i++) {
 			Cooler cooler = Cooler.getRandom(rnd);
@@ -56,7 +60,6 @@ public class Reactor {
 			}
 			if(validate(rndLoc, block)) {
 				addBlock(block, rndLoc);
-				validateAdj(rndLoc);
 			}
 		}
 	}
@@ -166,13 +169,13 @@ public class Reactor {
 	
 	public void addBlock(Block block, Location loc) {
 		blocks.put(loc, block);
+		validateAdj(loc);
 	}
 	
 	public void validateAdj(Location loc) {
 		for(Location adjLoc : loc.getAdjacent(size)) {
 			if(adjLoc.withinBounds(size) && !validate(adjLoc)) {
 				addBlock(BlockType.AIR.toBlock(), adjLoc);
-				validateAdj(adjLoc);
 			}
 		}
 	}
@@ -273,8 +276,27 @@ public class Reactor {
 		return num;
 	}
 	
+	private int adjacentToFuel(Location loc) {
+		int count = 0;
+		for(Location direction : Location.RELATIVE_ADJ) {
+			for(int i = 1; i < 6; i++) {
+				Location adjLoc = loc.clone().add(direction.clone().multiply(i));
+				if(adjLoc.withinBounds(size)) {
+					if(blocks.get(adjLoc).getType() == BlockType.FUEL_CELL) {
+						count++;
+						break;
+					}
+					if(blocks.get(adjLoc).getType() != BlockType.MODERATOR) {
+						break;
+					}
+				}
+			}
+		}
+		return count;
+	}
+	
 	boolean inlineWith(Location loc, Block block) {
-		return isHere(block, loc.add(Location.RELATIVE_X, size)) || isHere(block, loc.add(Location.RELATIVE_Y, size)) || isHere(block, loc.add(Location.RELATIVE_Z, size));
+		return isHere(block, loc.add(Location.RELATIVE_X)) || isHere(block, loc.add(Location.RELATIVE_Y)) || isHere(block, loc.add(Location.RELATIVE_Z));
 	}
 	
 	boolean isHere(Block block, ArrayList<Location> area) {
@@ -324,7 +346,7 @@ public class Reactor {
 			Block block = blocks.get(loc);
 			switch(block.getType()) {
 			case FUEL_CELL:
-				int adjCells = adjacentTo(loc, BlockType.FUEL_CELL);
+				int adjCells = adjacentToFuel(loc);
 				int adjMods = adjacentTo(loc, BlockType.MODERATOR);
 				res.genericPower += (1 + adjCells) + (1 + adjCells) * (adjMods / 6.0);
 				res.genericHeat += (adjCells + 1) * (adjCells + 2) / 2.0 + (1 + adjCells) * (adjMods / 3.0);
@@ -401,7 +423,7 @@ public class Reactor {
 		
 		return res;
 	}
-	
+
 	public void print(int targetHeat) {
 		pr("START-----------------------------------------------------------\n");
 		for(int x = 0; x < size.y; x++) {
@@ -429,5 +451,20 @@ public class Reactor {
 		return clone;
 	}
 	
+	@Override    
+    public boolean equals(Object o) { 
+		if(o instanceof Reactor) {
+			Reactor r = (Reactor) o;
+			return blocks == r.blocks;
+		}
+		return false;
+	}    
 	
+	/**
+	 * Unique given 0 <= [x, y, z] < 24
+	 */
+    @Override    
+    public int hashCode() {   
+    	return blocks.hashCode();
+    }
 }

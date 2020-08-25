@@ -81,6 +81,29 @@ public class QLocation {
 		return null;
 	}
 	
+	/**
+	 * Returns a new QLocation with a maximum of 'num' posbLocations
+	 * Returns at least one location unless no locations are present
+	 * 
+	 * @param num	number of locations to keep
+	 * @return
+	 */
+	public QLocation collapse(int num) {
+		QLocation out = new QLocation(max);
+		for(Location loc : posbLocations.keySet()) {
+			out.add(loc);
+			num--;
+			if(num < 1) {
+				return out;
+			}
+		}
+		return out;
+	}
+	
+	public QLocation collapse(double percent) {
+		return collapse((int) Math.round(posbLocations.size() * percent));
+	}
+	
 	public QLocation getAdjacent(boolean noWeight) {
 		QLocation out = new QLocation(max);
 		for(Location loc : posbLocations.keySet()) {

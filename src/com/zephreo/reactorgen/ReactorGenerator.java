@@ -3,7 +3,6 @@
  */
 package com.zephreo.reactorgen;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +29,7 @@ public class ReactorGenerator {
 	static final int TARGET_HEAT = 360;
 	static final int THREAD_COUNT = 10;
 	static final int ITERATIONS = 1 * 1000;
-	static final Location SIZE = new Location(3, 3, 3);
+	static final Location SIZE = new Location(4, 4, 4);
 	
 	static final int REFRESH_RATE = 200;
 	
@@ -113,8 +112,8 @@ public class ReactorGenerator {
 			
 		}
 		
-		int RLiterations = 500;
-		QLocation all = bestReactor.getAll();
+		int RLiterations = 5000;
+		QLocation all = bestReactor.getAll(); //.collapse(0.8);
 		for(int i = 0; i < RLiterations; i++) {
 			Action action = RL.RLcalc(bestReactor, all, TARGET_HEAT);
 			action.submit(bestReactor);
@@ -124,7 +123,7 @@ public class ReactorGenerator {
 		old.print(TARGET_HEAT);
 		bestReactor.print(TARGET_HEAT);
 		
-		
+		pr(RL.cache + " - " + RL.calc);
 		
 	    write(folder, "unoptimized.json", toJson(old));
 	    write(folder, "optimized.json", toJson(bestReactor));

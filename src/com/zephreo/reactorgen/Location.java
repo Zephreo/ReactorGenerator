@@ -41,18 +41,29 @@ public class Location {
 	}
 	
 	public ArrayList<Location> getAdjacent(Location max) {
-		return add(RELATIVE_ADJ, max);
+		return add(RELATIVE_ADJ);
 	}
 	
-	public ArrayList<Location> add(HashSet<Location> locs, Location max) {
+	public Location add(Location toAdd) {
+		this.x += toAdd.x;
+		this.y += toAdd.y;
+		this.z += toAdd.z;
+		return this;
+	}
+	
+	public ArrayList<Location> add(HashSet<Location> locs) {
 		ArrayList<Location> out = new ArrayList<Location>();
 		for(Location loc : locs) {
-			int newX = loc.x + x;
-			int newY = loc.y + y;
-			int newZ = loc.z + z;
-			out.add(new Location(newX, newY, newZ));
+			out.add(this.clone().add(loc));
 		}
 		return out;
+	}
+	
+	public Location multiply(int multiplier) {
+		x *= multiplier;
+		y *= multiplier;
+		z *= multiplier;
+		return this;
 	}
 	
 	public String toString() {
@@ -85,11 +96,15 @@ public class Location {
 	}    
 	
 	/**
-	 * Unique given (x, y, z) < 24
+	 * Unique given 0 <= [x, y, z] < 24
 	 */
     @Override    
     public int hashCode() {   
-    	return (int) (x + y * 25 + z * 25 * 25);
+    	return (int) (x + (y + 1) * 24 + (z + 1) * 24 * 24);
+    }
+    
+    public Location clone() {
+    	return new Location(x, y, z);
     }
 
 	public Object toString(boolean b) {
