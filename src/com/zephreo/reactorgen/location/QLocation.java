@@ -1,4 +1,4 @@
-package com.zephreo.reactorgen;
+package com.zephreo.reactorgen.location;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -9,7 +9,7 @@ public class QLocation {
 	static Random rnd = new Random();
 	
 	Location max;
-	HashMap<Location, Integer> posbLocations = new HashMap<Location, Integer>();
+	public HashMap<Location, Integer> posbLocations = new HashMap<Location, Integer>();
 
 	public QLocation(Location max, QInt posbX, QInt posbY, QInt posbZ) {
 		this.max = max;

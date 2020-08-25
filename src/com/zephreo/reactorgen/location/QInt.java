@@ -1,4 +1,4 @@
-package com.zephreo.reactorgen;
+package com.zephreo.reactorgen.location;
 
 import java.util.ArrayList;
 import java.util.Random;

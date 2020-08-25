@@ -1,8 +1,10 @@
-package com.zephreo.reactorgen;
+package com.zephreo.reactorgen.material;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
+
+import com.zephreo.reactorgen.Util;
 
 public interface Cooler extends Block {
 	
@@ -26,7 +28,7 @@ public interface Cooler extends Block {
 		ACTIVE_CRYOTHIUM(6400, 0);
 		
 		final Cooler cooler;
-		int strength;
+		public int strength;
 		public static final ArrayList<CoolerType> VALUES = new ArrayList<CoolerType>();
 		public static int SIZE;
 		private int weight = 1;
@@ -42,11 +44,11 @@ public interface Cooler extends Block {
 			cooler = new CoolerFactory(this);
 		}
 		
-		Cooler toBlock() {
+		public Cooler toBlock() {
 			return cooler;
 		}
 		
-		static void setup(HashSet<CoolerType> disabledCoolers) {
+		public static void setup(HashSet<CoolerType> disabledCoolers) {
 			for(CoolerType type : values()) {
 				if(!disabledCoolers.contains(type)) {
 					for(int i = 0; i < type.weight; i++) {
@@ -75,7 +77,7 @@ public interface Cooler extends Block {
 			}
 			
 			public String toString() {
-				return ReactorGenerator.toTitleCase(getCoolerType().toString()).replace("_", "");
+				return Util.toTitleCase(getCoolerType().toString()).replace("_", "");
 			}
 		}
 	}

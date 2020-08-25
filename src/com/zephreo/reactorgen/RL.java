@@ -4,8 +4,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
-import com.zephreo.reactorgen.Block.BlockType;
-import com.zephreo.reactorgen.Cooler.CoolerType;
+import com.zephreo.reactorgen.location.Location;
+import com.zephreo.reactorgen.location.QLocation;
+import com.zephreo.reactorgen.material.Block;
+import com.zephreo.reactorgen.material.Block.BlockType;
+import com.zephreo.reactorgen.material.Cooler.CoolerType;
 
 public class RL {
 	
@@ -106,17 +109,11 @@ public class RL {
 		}
 	}
 	
-	static int cache = 0;
-	static int calc = 0;
-	
 	static float getScore(Reactor r, int targetHeat) {
 		if(!cachedScores.containsKey(r.blocks)) {
-			calc++;
 			float score = r.evaluate(targetHeat).score;
 			cachedScores.put(r.blocks, score);
 			return score;
-		} else {
-			cache++;
 		}
 		return cachedScores.get(r.blocks);
 	}
@@ -180,13 +177,13 @@ public class RL {
 			this.loc = loc;
 			this.targetHeat = targetHeat;
 			r = reactor;
-			calcSurrounding(loc);
+			calcSurrounding(reactor, loc);
 		}
 		
-		void calcSurrounding(Location loc) {
-			for(Location adjPos : loc.getAdjacent(Reactor.size)) {
+		void calcSurrounding(Reactor r, Location loc) {
+			for(Location adjPos : loc.getAdjacent(r.generator.size)) {
 				Block block;
-				if(adjPos.withinBounds(Reactor.size)) {
+				if(adjPos.withinBounds(r.generator.size)) {
 					block = r.blocks.get(adjPos);
 				} else {
 					block = BlockType.CASING.toBlock();

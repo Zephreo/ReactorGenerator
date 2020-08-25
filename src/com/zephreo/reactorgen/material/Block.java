@@ -1,6 +1,7 @@
-package com.zephreo.reactorgen;
+package com.zephreo.reactorgen.material;
 
-import com.zephreo.reactorgen.Cooler.CoolerType;
+import com.zephreo.reactorgen.Util;
+import com.zephreo.reactorgen.material.Cooler.CoolerType;
 
 public interface Block {
 	
@@ -17,7 +18,7 @@ public interface Block {
 			block = new BlockFactory(this);
 		}
 		
-		Block toBlock() {
+		public Block toBlock() {
 			return block;
 		}
 		
@@ -25,7 +26,7 @@ public interface Block {
 			if(this == BlockType.MODERATOR) {
 				return "Graphite";
 			}
-			return ReactorGenerator.toTitleCase(this.name()).replace("_", "");
+			return Util.toTitleCase(this.name()).replace("_", "");
 		}
 		
 		private class BlockFactory implements Block {

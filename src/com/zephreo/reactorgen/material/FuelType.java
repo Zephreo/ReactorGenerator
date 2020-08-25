@@ -1,4 +1,4 @@
-package com.zephreo.reactorgen;
+package com.zephreo.reactorgen.material;
 
 public enum FuelType {
 /*
