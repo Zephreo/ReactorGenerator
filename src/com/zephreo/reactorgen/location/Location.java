@@ -110,4 +110,9 @@ public class Location {
 	public Object toString(boolean b) {
 		return x + "," + y + "," + z;
 	}
+	
+	public static Location parseLocation(String str) {
+		String[] coords = str.split(",");
+		return new Location(Integer.parseInt(coords[0]) - 1, Integer.parseInt(coords[1]) - 1, Integer.parseInt(coords[2]) - 1);
+	}
 }

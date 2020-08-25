@@ -1,11 +1,8 @@
 package com.zephreo.reactorgen;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 
-import com.zephreo.reactorgen.RL.Action;
 import com.zephreo.reactorgen.location.Location;
 import com.zephreo.reactorgen.material.Block.BlockType;
 
@@ -57,6 +54,7 @@ public class Generator {
 		
 		for(int i = 0; i < ReactorGenerator.THREAD_COUNT; i++) {
 			RandomGenerator gen = new RandomGenerator();
+			gen.generator = this;
 			Thread thread = new Thread(gen);
 			thread.start();
 			threads.put(thread, gen);

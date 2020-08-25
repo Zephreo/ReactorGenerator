@@ -1,8 +1,11 @@
 package com.zephreo.reactorgen;
 
+import java.io.FileReader;
+import java.util.HashMap;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-
+import org.json.simple.parser.JSONParser;
 import com.zephreo.reactorgen.location.Location;
 import com.zephreo.reactorgen.material.Block;
 import com.zephreo.reactorgen.material.Block.BlockType;
@@ -65,6 +68,29 @@ public class JSON {
 		blocks.add(blockName);
 	}
 
-	
+	static Reactor fromJSON(String folder, String fileName) throws Exception {
+		JSONParser parser = new JSONParser();
+		JSONObject root = (JSONObject) parser.parse(new FileReader(folder + fileName));
+
+		JSONArray blocksJSON = (JSONArray) root.get("CompressedReactor");
+
+		Location size = Location.parseLocation((String) root.get("InteriorDimensions")).add(new Location(1, 1, 1));
+
+		HashMap<Location, Block> blocks = new HashMap<Location, Block>();
+		for(Object blockObj : blocksJSON) {
+			JSONObject blockJSON = (JSONObject) blockObj;
+			String name = blockJSON.keySet().toArray()[0].toString();
+			JSONArray locations = (JSONArray) blockJSON.get(name);
+			Block block = Block.fromString(name);
+			for(Object locObj : locations) {
+				blocks.put(Location.parseLocation((String) locObj), block);
+			}
+		}
+		
+		Reactor r = new Reactor(new Generator(size));
+		r.addBlocks(blocks);
+		
+		return r;
+	}
 
 }

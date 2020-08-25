@@ -18,22 +18,37 @@ public class Reactor {
 	
 	Generator generator;
 	
-	static HashMap<Location, Block> empty = new HashMap<Location, Block>();
-	
 	HashMap<Location, Block> blocks = new HashMap<Location, Block>();
 	
 	Random rnd = new Random();
 	
 	public static final HashSet<CoolerType> DISABLED_COOLERS = new HashSet<CoolerType>();
 	
+	public void fillEmpty() {
+		//Setup reactor defaults
+		for(int x = 0; x < generator.size.x; x++) {
+			for(int y = 0; y < generator.size.y; y++) {
+				for(int z = 0; z < generator.size.z; z++) {
+					Location loc = new Location(x, y, z);
+					blocks.put(loc, BlockType.AIR.toBlock());
+				}
+			}
+		}
+	}
+	
 	public Reactor(Generator generator) {
 		this.generator = generator;
+		fillEmpty();
 		//rnd.setSeed(123);
 	}
 	
 	public Reactor(Generator generator, HashMap<Location, Block> blocks) {
 		this.generator = generator;
 		this.blocks = blocks;
+	}
+	
+	public void addBlocks(HashMap<Location, Block> blocks) {
+		this.blocks.putAll(blocks);
 	}
 	
 	public void addRandomCoolers(int count) {
@@ -184,7 +199,7 @@ public class Reactor {
 		}
 	}
 	
-	public boolean validate(Location loc, Block block) {
+	boolean validate(Location loc, Block block) {
 		if(block == null) {
 			return false;
 		}
@@ -420,6 +435,26 @@ public class Reactor {
 				+ (res.genericHeat / 10) * ReactorGenerator.MUTLTIPLIER_HEAT
 				+ res.air * ReactorGenerator.MUTLTIPLIER_AIR;
 		
+		if(res.genericPower < ReactorGenerator.MIN_POWER) {
+			res.score -= ReactorGenerator.MIN_POWER - res.genericPower;
+		}
+		
+		if(res.genericHeat < ReactorGenerator.MIN_HEAT) {
+			res.score -= ReactorGenerator.MIN_HEAT - res.genericHeat;
+		}
+		
+		if(res.efficiency < ReactorGenerator.MIN_EFFICIENCY) {
+			res.score -= ReactorGenerator.MIN_EFFICIENCY - res.efficiency;
+		}
+		
+		if(res.symmetryFactor < ReactorGenerator.MIN_SYMMETRY) {
+			res.score -= ReactorGenerator.MIN_SYMMETRY - res.symmetryFactor;
+		}
+		
+		if(res.air > ReactorGenerator.MAX_AIR) {
+			res.score -= res.air - ReactorGenerator.MAX_AIR;
+		}
+		
 		//Penalise heat being below target
 		if(targetHeat > res.maxHeat) {
 			res.score -= targetHeat - res.maxHeat;
@@ -430,8 +465,8 @@ public class Reactor {
 
 	public void print(int targetHeat) {
 		Util.pr("START-----------------------------------------------------------\n");
-		for(int x = 0; x < generator.size.y; x++) {
-			for(int y = 0; y < generator.size.x; y++) {
+		for(int x = 0; x < generator.size.x; x++) {
+			for(int y = 0; y < generator.size.y; y++) {
 				for(int z = 0; z < generator.size.z; z++) {
 					Block block = blocks.get(new Location(x, y, z));
 					System.out.format("%15s", block.toString());
@@ -446,9 +481,7 @@ public class Reactor {
 	
 	@SuppressWarnings("unchecked")
 	public Reactor clone() {
-		Reactor clone = new Reactor(generator);
-		clone.blocks = (HashMap<Location, Block>) blocks.clone();
-		return clone;
+		return new Reactor(generator, (HashMap<Location, Block>) blocks.clone());
 	}
 	
 	@Override    
