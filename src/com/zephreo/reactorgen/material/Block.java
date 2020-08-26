@@ -41,15 +41,19 @@ public interface Block {
 				return type;
 			}
 			
+			@Override
 			public String toString() {
 				return type.toString();
 			}
 			
-			
+			@Override    
+		    public int hashCode() {   
+		    	return type.hashCode();
+		    }
 		}
 	}
 	
-	public static Block fromString(String string) throws Exception {
+	public static Block parse(String string) throws Exception {
 		string = string.replaceAll("(.)([A-Z])", "$1 $2").trim().replace(" ", "");
 	    for(BlockType enumValue : BlockType.values()) {
 	        if(enumValue.toString().equalsIgnoreCase(string)) {

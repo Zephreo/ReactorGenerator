@@ -444,7 +444,7 @@ public class Reactor {
 		}
 		
 		if(res.efficiency < ReactorGenerator.MIN_EFFICIENCY) {
-			res.score -= ReactorGenerator.MIN_EFFICIENCY - res.efficiency;
+			res.score -= (ReactorGenerator.MIN_EFFICIENCY - res.efficiency) * (ReactorGenerator.MUTLTIPLIER_EFFICIENCY + 1);
 		}
 		
 		if(res.symmetryFactor < ReactorGenerator.MIN_SYMMETRY) {
@@ -479,9 +479,10 @@ public class Reactor {
 		Util.pr(JSON.toJson(this) + "\n");
 	}
 	
-	@SuppressWarnings("unchecked")
 	public Reactor clone() {
-		return new Reactor(generator, (HashMap<Location, Block>) blocks.clone());
+		HashMap<Location, Block> blocks = new HashMap<Location, Block>();
+		blocks.putAll(this.blocks);
+		return new Reactor(generator, blocks);
 	}
 	
 	@Override    

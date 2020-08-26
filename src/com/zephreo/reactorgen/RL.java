@@ -1,7 +1,9 @@
 package com.zephreo.reactorgen;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import com.zephreo.reactorgen.location.Location;
@@ -13,7 +15,9 @@ import com.zephreo.reactorgen.material.Cooler.CoolerType;
 public class RL {
 	
 	static HashMap<HashMap<Location, Block>, Float> cachedScores = new HashMap<HashMap<Location, Block>, Float>();
-	static HashMap<String, HashMap<Action, Float>> RLTable = new HashMap<String, HashMap<Action, Float>>();
+	static HashMap<HashMap<Action, Float>, Float> cachedPosbActions = new HashMap<HashMap<Action, Float>, Float>();
+	
+	static HashMap<HashMap<Location, Block>, HashMap<Action, Float>> RLTable = new HashMap<HashMap<Location, Block>, HashMap<Action, Float>>();
 	
 	static HashSet<Block> allBlocks = new HashSet<Block>();
 	static {
@@ -37,75 +41,140 @@ public class RL {
 		}
 	}
 
-	static Action RLcalc(Reactor reactor, QLocation posbLocs, int targetHeat) {
-		float bestScore = -Float.MAX_VALUE;
-		Action bestAction = null;
+	static Action RLcalc(Reactor reactor, int targetHeat, double accuracy, int depth) {
+		MultiAction posbActions = getPosbActions(reactor, targetHeat, accuracy, depth);
 		
-		for(Location loc : posbLocs.posbLocations.keySet()) {
-			State state = new State(reactor.clone(), targetHeat, loc);
-			
-			if(RLTable.containsKey(state.toString())) {
-				HashMap<Action, Float> posbActions = RLTable.get(state.toString());
-				
-				for(Action action : posbActions.keySet()) {
-					if(reactor.validate(loc, action.blockChanged)) {
-						float score = posbActions.get(action) + action.newScore(state);
-						posbActions.put(action, score);
-						if(score > bestScore) {
-							bestScore = score;
-							bestAction = action;
-							bestAction.state = state;
-						}
-					}
-				}
-			} else {
-				HashMap<Action, Float> posbActions = new HashMap<Action, Float>();
-				for(Block block : allBlocks) {
-					if(reactor.validate(loc, block)) {
-						Action action = new Action(state, block);
-						posbActions.put(action, action.score);
-						if(action.score > bestScore) {
-							bestScore = action.score;
-							bestAction = action;
-						}
-					}
-				}
-				RLTable.put(state.toString(), posbActions);
-			}
+		if(depth <= 1) {
+			return getBestAction(posbActions.posbActions);
 		}
-		return bestAction;
+		
+		return posbActions.bestFutureAction.previousAction;
 	}
 	
-	static String RLTable() {
-		String out = ""; 
-		for(Entry<String, HashMap<Action, Float>> entry : RLTable.entrySet()) {
-			out += entry.toString() + "&";
+	static HashMap<MultiActionParamater, MultiAction> cachedMultiActions = new HashMap<MultiActionParamater, MultiAction>();
+	
+	static class MultiActionParamater {
+		Reactor reactor;
+		Integer targetHeat;
+		Double accuracy;
+		Integer depth;
+		
+		MultiActionParamater(Reactor reactor, int targetHeat, double accuracy, int depth) {
+			this.reactor = reactor;
+			this.targetHeat = targetHeat;
+			this.accuracy = accuracy;
+			this.depth = depth;
+		}
+		
+		@Override    
+	    public int hashCode() { 
+	    	return reactor.blocks.hashCode() + targetHeat.hashCode() + accuracy.hashCode() + depth.hashCode();
+	    }
+	}
+	
+	static MultiAction getPosbActions(Reactor reactor, int targetHeat, double accuracy, int depth) {
+		MultiAction cache = cachedMultiActions.get(new MultiActionParamater(reactor, targetHeat, accuracy, depth));
+		if(cache != null) {
+			return cache;
+		}
+		MultiAction out = new MultiAction();
+		out.posbActions = getPosbActions(reactor, targetHeat, accuracy);
+		out.score = getBestScore(out.posbActions);
+		if(depth > 1) {
+			out.futurePosbActions = new HashSet<MultiAction>();
+			MultiAction bestFutureAction = null;
+			float bestSubScore = -Float.MAX_VALUE;
+			for(Action action : out.posbActions.keySet()) {
+				Reactor futureReactor = reactor.clone();
+				action.submit(futureReactor);
+				MultiAction futureAction = getPosbActions(futureReactor, targetHeat, accuracy, depth - 1);
+				out.futurePosbActions.add(futureAction);
+				if(futureAction.score > bestSubScore) {
+					bestSubScore = futureAction.score;
+					bestFutureAction = futureAction;
+				}
+				futureAction.previousAction = action;
+			}
+			out.score += bestSubScore;
+			out.bestFutureAction = bestFutureAction;
 		}
 		return out;
 	}
 	
-	//{Lapis=1, Redstone=1, Casing=1, Air=3}={Helium=499.98666, Air=0.0, FuelCell=565.6831}&
+	static Action getBestAction(HashMap<Action, Float> posbActions) {
+		return Collections.max(posbActions.entrySet(), Map.Entry.comparingByValue()).getKey();
+	}
+	
+	static float getBestScore(HashMap<Action, Float> posbActions) {
+		Float score = cachedPosbActions.get(posbActions);
+		if(score == null) {
+			score = Collections.max(posbActions.values());
+			//cachedPosbActions.put(posbActions, score);
+		}
+		return score;
+	}
+	
+	static HashMap<Action, Float> getPosbActions(Reactor reactor, int targetHeat, double accuracy) {
+		QLocation locationsToCheck = reactor.getAll();
+		
+		if(accuracy < 1) {
+			locationsToCheck = locationsToCheck.collapse(accuracy);
+		}
+		
+		if(!RLTable.containsKey(reactor.blocks)) {
+			HashMap<Action, Float> posbActions = new HashMap<Action, Float>();
+			for(Location loc : locationsToCheck.toSet()) {
+				for(Block block : allBlocks) {
+					if(reactor.validate(loc, block)) {
+						Action action = new Action(loc, block);
+						posbActions.put(action, action.newScore(reactor, targetHeat));
+					}
+				}
+			}
+			RLTable.put(reactor.blocks, posbActions);
+		} else {
+			if(ReactorGenerator.RL_LEARNING_MODE) {
+				for(Entry<Action, Float> entry : RLTable.get(reactor.blocks).entrySet()) {
+					entry.setValue((entry.getValue() + entry.getKey().newScore(reactor, targetHeat)) / 2);
+				}
+			}
+		}
+		
+		return RLTable.get(reactor.blocks);
+	}
+	
+	static String RLTable() {
+		String out = ""; 
+		for(Entry<HashMap<Location, Block>, HashMap<Action, Float>> entry : RLTable.entrySet()) {
+			out += entry.toString() + "&";
+			
+		}
+		return out;
+	}
+	
+	//{1,3,1=Helium, ...  4,2,3=Redstone}={Helium_1,3,1=0.0, Air_1,3,1=-959.5158, FuelCell_1,3,1=-4352.0, Gold_1,3,1=0.0}&
 	static void read(String file) throws Exception {
 		for(String entry : file.split("\\&")) {
 			String[] strs = entry.split("\\{|\\}");
 			
-			//State
-			HashMap<Block, Integer> surrounding = new HashMap<Block, Integer>();
-			String[] stateData = strs[1].split("=|,");
-			for(int i = 0; i < stateData.length; i += 2) {
-				surrounding.put(Block.fromString(stateData[i]), Integer.parseInt(stateData[i + 1]));
+			//reactor
+			HashMap<Location, Block> reactor = new HashMap<Location, Block>();
+			String[] rData = strs[1].split("=|,");
+			for(int i = 0; i < rData.length; i += 4) {
+				Location loc = new Location(Integer.parseInt(rData[i]), Integer.parseInt(rData[i + 1]), Integer.parseInt(rData[i + 2]));
+				reactor.put(loc, Block.parse(rData[i + 3]));
 			}
 			
 			//Action data
 			HashMap<Action, Float> acc = new HashMap<Action, Float>();
-			String[] actionData = strs[3].split(",");
-			for(int i = 0; i < actionData.length; i++) {
-				String[] spl = actionData[i].split("=");
-				Block block = Block.fromString(spl[0]);
-				acc.put(new Action(block), Float.parseFloat(spl[1]));
+			String[] actionData = strs[3].split("_|,|=");
+			for(int i = 0; i < actionData.length; i += 5) {
+				Block block = Block.parse(actionData[i]);
+				Location loc = new Location(Integer.parseInt(actionData[i + 1]), Integer.parseInt(actionData[i + 2]), Integer.parseInt(actionData[i + 3]));
+				acc.put(new Action(loc, block), Float.parseFloat(actionData[i + 4]));
 			}
 			
-			RLTable.put(surrounding.toString(), acc);
+			RLTable.put(reactor, acc);
 		}
 	}
 	
@@ -118,33 +187,50 @@ public class RL {
 		return cachedScores.get(r.blocks);
 	}
 	
+	static class MultiAction {
+		Action previousAction;
+		MultiAction bestFutureAction;
+		HashSet<MultiAction> futurePosbActions = null;
+		HashMap<Action, Float> posbActions;
+		Float score;
+		
+		@Override    
+	    public int hashCode() {   
+			int out = posbActions.keySet().hashCode() + score.hashCode();
+			if(!(futurePosbActions == null)) {
+				out += futurePosbActions.hashCode();
+			}
+	    	return out;
+	    }
+	    
+	    @Override
+	    public String toString() {
+	    	String out = posbActions.keySet().toString() + score;
+			if(!(futurePosbActions == null)) {
+				out += futurePosbActions.toString();
+			}
+	    	return out;
+	    }
+	}
+	
 	static class Action {
-		float score;
-		State state;
+		Location loc;
 		Block blockChanged;
 		
-		Action(State state, Block block) {
-			this.state = state;
-			this.blockChanged = block;
-			
-			Reactor r = state.r.clone();
-			r.addBlock(block, state.loc);
-			score = getScore(r, state.targetHeat) - getScore(state.r, state.targetHeat);
-		}
-		
-		Action(Block block) {
+		Action(Location loc, Block block) {
+			this.loc = loc;
 			this.blockChanged = block;
 		}
 		
-		float newScore(State state) {
-			Reactor r = state.r.clone();
-			r.addBlock(blockChanged, state.loc);
-			score = getScore(r, state.targetHeat) - getScore(state.r, state.targetHeat);
+		float newScore(Reactor reactor, int targetHeat) {
+			Reactor r = reactor.clone();
+			r.addBlock(blockChanged, loc);
+			float score = getScore(r, targetHeat) - getScore(reactor, targetHeat);
 			return score;
 		}
 		
 		void submit(Reactor r) {
-			r.addBlock(blockChanged, state.loc);
+			r.addBlock(blockChanged, loc);
 		}
 		
 		@Override    
@@ -158,57 +244,12 @@ public class RL {
 		
 	    @Override    
 	    public int hashCode() {   
-	    	return blockChanged.hashCode();
+	    	return blockChanged.hashCode() + loc.hashCode();
 	    }
 	    
 	    @Override
 	    public String toString() {
-	    	return blockChanged.toString();
+	    	return blockChanged.toString() + "_" + loc.toString();
 	    }
 	}
-	
-	static class State {
-		HashMap<Block, Integer> surrounding = new HashMap<Block, Integer>();
-		Location loc;
-		Reactor r;
-		int targetHeat;
-		
-		State(Reactor reactor, int targetHeat, Location loc) {
-			this.loc = loc;
-			this.targetHeat = targetHeat;
-			r = reactor;
-			calcSurrounding(reactor, loc);
-		}
-		
-		void calcSurrounding(Reactor r, Location loc) {
-			for(Location adjPos : loc.getAdjacent(r.generator.size)) {
-				Block block;
-				if(adjPos.withinBounds(r.generator.size)) {
-					block = r.blocks.get(adjPos);
-				} else {
-					block = BlockType.CASING.toBlock();
-				}
-				surrounding.put(block, surrounding.getOrDefault(block, 0) + 1);
-			}
-		}
-		
-		@Override    
-	    public boolean equals(Object o) { 
-			if(o instanceof State) {
-				State st = (State) o;
-				return st.surrounding == surrounding; //&& st.res.reactorCells == res.reactorCells;
-			}
-			return false;
-		}    
-		
-	    @Override    
-	    public int hashCode() {   
-	    	return surrounding.hashCode(); // + res.reactorCells
-	    }
-	    
-	    public String toString() {
-	    	return surrounding.toString();
-	    }
-	}
-
 }

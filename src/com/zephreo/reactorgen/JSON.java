@@ -81,7 +81,7 @@ public class JSON {
 			JSONObject blockJSON = (JSONObject) blockObj;
 			String name = blockJSON.keySet().toArray()[0].toString();
 			JSONArray locations = (JSONArray) blockJSON.get(name);
-			Block block = Block.fromString(name);
+			Block block = Block.parse(name);
 			for(Object locObj : locations) {
 				blocks.put(Location.parseLocation((String) locObj), block);
 			}

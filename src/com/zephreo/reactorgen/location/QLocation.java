@@ -3,6 +3,7 @@ package com.zephreo.reactorgen.location;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.Set;
 
 public class QLocation {
 	
@@ -44,15 +45,12 @@ public class QLocation {
 	}
 	
 	public QLocation and(QLocation other) {
-		/*
-		QLocation out = new QLocation(locations, max);
-		for(Location loc : posbLocations.keySet()) {
-			if(other.posbLocations.containsKey(loc)) {
-				out.add(loc);
-			}
-		} //*/
 		posbLocations.keySet().retainAll(other.posbLocations.keySet());
 		return this;
+	}
+	
+	public Set<Location> toSet() {
+		return posbLocations.keySet();
 	}
 	 
 	public void add(int x, int y, int z) {

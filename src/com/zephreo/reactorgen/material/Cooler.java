@@ -76,9 +76,15 @@ public interface Cooler extends Block {
 				return BlockType.COOLER;
 			}
 			
+			@Override
 			public String toString() {
 				return Util.toTitleCase(getCoolerType().toString()).replace("_", "");
 			}
+			
+			@Override    
+		    public int hashCode() {   
+		    	return type.hashCode();
+		    }
 		}
 	}
 	
