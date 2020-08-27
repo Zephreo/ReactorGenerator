@@ -11,8 +11,8 @@
 
 ## Usage
 ```
-java ReactorGen <x> <y> <z> [options]
-java ReactorGen 3 3 3 -o "./Builds/optimised.json" -d Cryotheum,Enderium
+java -jar ReactorGen.jar <x> <y> <z> [options]
+java -jar ReactorGen.jar 3 3 3 -o "./Builds/optimised.json" -d Cryotheum,Enderium
 ```
 
 ```
