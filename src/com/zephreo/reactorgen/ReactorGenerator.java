@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import com.zephreo.reactorgen.RL.Action;
 import com.zephreo.reactorgen.location.Location;
 import com.zephreo.reactorgen.material.Cooler.CoolerType;
@@ -32,6 +31,7 @@ public class ReactorGenerator {
 	
 	static int REFRESH_RATE = 200;
 	
+	/*
 	static {
 		Reactor.DISABLED_COOLERS.addAll(Arrays.asList(
 				CoolerType.ACTIVE_CRYOTHIUM,
@@ -39,7 +39,7 @@ public class ReactorGenerator {
 				CoolerType.ENDERIUM,
 				CoolerType.CRYOTHEUM));
 		CoolerType.setup(Reactor.DISABLED_COOLERS);
-	}
+	} //*/
 	
 	//Score multipliers
 	static float MULTIPLIER_AIR;
@@ -60,6 +60,7 @@ public class ReactorGenerator {
 	
 	public static void main(String[] args) throws Exception {
 		Command.parseCommand(args);
+		CoolerType.setup(Reactor.DISABLED_COOLERS);
 		
 		Generator generator = new Generator(SIZE);
 		
@@ -92,10 +93,10 @@ public class ReactorGenerator {
 		old.print(TARGET_HEAT);
 		reactor.print(TARGET_HEAT);
 		
-	    write("./Builds/unoptimized.json", JSON.toJson(old));
+	    //write("./Builds/unoptimized.json", JSON.toJson(old));
 	    write(OUTPUT_FILE, JSON.toJson(reactor));
 	    
-	    write("./Builds/RLTable.txt", RL.RLTable());
+	    write("./RLTable.txt", RL.RLTable());
 	}
 
 	static void write(String filePath, Object data) throws IOException {

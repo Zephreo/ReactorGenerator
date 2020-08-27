@@ -24,8 +24,8 @@ public interface Cooler extends Block {
 		COPPER(80),
 		TIN(120),
 		MAGNESIUM(110),
-		ACTIVE_WATER(150, 0),
-		ACTIVE_CRYOTHIUM(6400, 0);
+		ACTIVE_WATER(150),
+		ACTIVE_CRYOTHIUM(6400);
 		
 		final Cooler cooler;
 		public int strength;
@@ -46,6 +46,15 @@ public interface Cooler extends Block {
 		
 		public Cooler toBlock() {
 			return cooler;
+		}
+
+		public static CoolerType fromString(String str) {
+			for(CoolerType enumValue : CoolerType.values()) {
+		        if(enumValue.toBlock().toString().equalsIgnoreCase(str) || enumValue.name().equalsIgnoreCase(str)) {
+		            return enumValue;
+		        }
+		    }
+			return null;
 		}
 		
 		public static void setup(HashSet<CoolerType> disabledCoolers) {

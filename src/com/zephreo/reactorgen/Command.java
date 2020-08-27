@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.apache.commons.cli.*;
 
+import com.zephreo.reactorgen.material.Cooler.CoolerType;
+
 public class Command {
 	
 	static final Options OPTIONS = new Options();
@@ -32,6 +34,8 @@ public class Command {
         new CustomOption("minHeat", OptionType.MIN_HEAT, 0, null, Float.class, 0, true, "decrements score if heat is under this amount");
         new CustomOption("minEfficiency", OptionType.MIN_EFFICIENCY, 0, null, Float.class, 1, true, "decrements score if efficiency is under this amount");
         new CustomOption("minSymmetry", OptionType.MIN_SYMMETRY, 0, 1, Float.class, 0.4, true, "decrements score if symmetry is under this amount");
+        
+        new CustomOption("d", "disable", OptionType.DISABLED_COOLERS, String.class, null, true, "What coolers the generator should never use");
 	}
 	
 	enum OptionType {
@@ -52,7 +56,8 @@ public class Command {
 		MIN_HEAT,
 		MIN_EFFICIENCY,
 		MIN_SYMMETRY, 
-		ACCURACY;
+		ACCURACY, 
+		DISABLED_COOLERS;
 	}
 
 	static void parseCommand(String[] args) throws Exception {
@@ -63,15 +68,17 @@ public class Command {
         try {
             cmd = parser.parse(OPTIONS, args);
             List<String> remArgs = cmd.getArgList();
-            ReactorGenerator.SIZE.x = Integer.parseInt(remArgs.get(0));
-            ReactorGenerator.SIZE.y = Integer.parseInt(remArgs.get(1));
-            ReactorGenerator.SIZE.z = Integer.parseInt(remArgs.get(2));
             for(CustomOption option : ARGS) {
             	option.apply();
             }
+            if(ReactorGenerator.INPUT_FILE != null) {
+            	ReactorGenerator.SIZE.x = Integer.parseInt(remArgs.get(0));
+                ReactorGenerator.SIZE.y = Integer.parseInt(remArgs.get(1));
+                ReactorGenerator.SIZE.z = Integer.parseInt(remArgs.get(2));
+            }
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("utility-name", OPTIONS);
+            formatter.printHelp("reactor-generator", OPTIONS);
 
             System.exit(1);
         }
@@ -157,30 +164,42 @@ public class Command {
 			case ACCURACY:
 				ReactorGenerator.ACCURACY = Float.parseFloat(returnVal);
 				break;
+			case DISABLED_COOLERS:
+				String[] coolers = OPTIONS.getOption(name).getValues();
+				if(coolers != null) {
+					for(String strCooler : coolers) {
+						Reactor.DISABLED_COOLERS.add(CoolerType.fromString(strCooler));
+					}
+				}
+				break;
 			}
 		}
 		
 		CustomOption(String name, OptionType op, Integer min, Integer max, Class<?> type, Object defaultValue, boolean hasArg, String description) {
-			setup(null, name, op, min, max, type, defaultValue, hasArg, description, false);
+			setup(null, name, op, min, max, type, defaultValue, hasArg, description, false, 1);
 		}
 		
 		CustomOption(String shortName, String name, OptionType op, Integer min, Integer max, Class<?> type, Object defaultValue, boolean hasArg, String description) {
-			setup(shortName, name, op, min, max, type, defaultValue, hasArg, description, false);
+			setup(shortName, name, op, min, max, type, defaultValue, hasArg, description, false, 1);
 		}
 		
 		CustomOption(String name, OptionType op, Class<?> type, Object defaultValue, boolean hasArg, String description) {
-			setup(null, name, op, null, null, type, defaultValue, hasArg, description, false);
+			setup(null, name, op, null, null, type, defaultValue, hasArg, description, false, 1);
 		}
 		
 		CustomOption(String shortName, String name, OptionType op, Class<?> type, Object defaultValue, boolean hasArg, String description) {
-			setup(shortName, name, op, null, null, type, defaultValue, hasArg, description, false);
+			setup(shortName, name, op, null, null, type, defaultValue, hasArg, description, false, 1);
+		}
+		
+		CustomOption(String shortName, String name, OptionType op, Class<?> type, Object defaultValue, boolean hasArg, String description, int numArgs) {
+			setup(shortName, name, op, null, null, type, defaultValue, hasArg, description, false, numArgs);
 		}
 		
 		CustomOption(String shortName, String name, OptionType op, Class<?> type, Object defaultValue, boolean hasArg, String description, boolean required) {
-			setup(shortName, name, op, null, null, type, defaultValue, hasArg, description, required);
+			setup(shortName, name, op, null, null, type, defaultValue, hasArg, description, required, 1);
 		}
 		
-		private void setup(String shortName, String name, OptionType op, Integer min, Integer max, Class<?> type, Object defaultValue, boolean hasArg, String description, boolean required) {
+		private void setup(String shortName, String name, OptionType op, Integer min, Integer max, Class<?> type, Object defaultValue, boolean hasArg, String description, boolean required, int numArgs) {
 			this.name = name;
 			this.min = min;
 			this.max = max;
@@ -206,6 +225,7 @@ public class Command {
 			}
 			option.setRequired(required);
 			option.setType(type);
+			option.setArgs(numArgs);
 	        OPTIONS.addOption(option);
 	        ARGS.add(this);
 		}
