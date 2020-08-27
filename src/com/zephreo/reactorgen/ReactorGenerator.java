@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-
 import com.zephreo.reactorgen.RL.Action;
 import com.zephreo.reactorgen.location.Location;
 import com.zephreo.reactorgen.material.Cooler.CoolerType;
@@ -19,51 +18,58 @@ import com.zephreo.reactorgen.material.Cooler.CoolerType;
  */
 public class ReactorGenerator {
 	
-	static final int TARGET_HEAT = 360;
-	static final int THREAD_COUNT = 10;
-	static final int ITERATIONS = 1 * 1000;
-	static final int RL_ITERATIONS = 5000;
-	static final int RL_DEPTH = 1;
+	static int TARGET_HEAT;
+	static int THREAD_COUNT;
+	static int RANDOM_ITERATIONS;
+	static int OPTIMISATION_ITERATIONS;
+	static int OPTIMISATION_DEPTH;
 	
-	static final boolean RL_LEARNING_MODE = true;
+	static boolean RL_LEARNING_MODE = true;
 	
-	static final Location SIZE = new Location(3, 3, 3);
+	static Location SIZE = new Location(3, 3, 3);
 	
-	static final double ACCURACY = 1;
+	static double ACCURACY;
 	
-	static final int REFRESH_RATE = 200;
+	static int REFRESH_RATE = 200;
 	
 	static {
 		Reactor.DISABLED_COOLERS.addAll(Arrays.asList(
 				CoolerType.ACTIVE_CRYOTHIUM,
 				CoolerType.ACTIVE_WATER,
-				CoolerType.ENDERIUM));
-		
+				CoolerType.ENDERIUM,
+				CoolerType.CRYOTHEUM));
 		CoolerType.setup(Reactor.DISABLED_COOLERS);
 	}
 	
 	//Score multipliers
-	static final float MUTLTIPLIER_AIR = -100f;
-	static final float MUTLTIPLIER_POWER = 0f; 
-	static final float MUTLTIPLIER_HEAT = 0f;
-	static final float MUTLTIPLIER_EFFICIENCY = 1;
-	static final float MUTLTIPLIER_SYMMETRY = 1;
+	static float MULTIPLIER_AIR;
+	static float MULTIPLIER_POWER; 
+	static float MULTIPLIER_HEAT;
+	static float MULTIPLIER_EFFICIENCY;
+	static float MULTIPLIER_SYMMETRY;
 	
 	//Score multipliers
-	static final int MAX_AIR = 3;
-	static final float MIN_POWER = 0; 
-	static final float MIN_HEAT = 0;
-	static final float MIN_EFFICIENCY = 0f;
-	static final float MIN_SYMMETRY = 0.9f;
+	static int MAX_AIR;
+	static float MIN_POWER; 
+	static float MIN_HEAT;
+	static float MIN_EFFICIENCY;
+	static float MIN_SYMMETRY;
 	
-	static String folder = "C:\\Users\\hdent\\Desktop\\Minecraft\\Apps\\Reactor Planner\\";
+	static String INPUT_FILE;
+	static String OUTPUT_FILE;
 	
 	public static void main(String[] args) throws Exception {
+		Command.parseCommand(args);
+		
 		Generator generator = new Generator(SIZE);
 		
-		Reactor reactor = generator.generateRandom();
+		Reactor reactor;
 		 
-		//Reactor reactor = JSON.fromJSON(folder, "Beast.json");
+		if(INPUT_FILE == null) {
+			reactor = generator.generateRandom();
+		} else {
+			reactor = JSON.fromJSON(INPUT_FILE);
+		}
 		
 		reactor.print(TARGET_HEAT);
 		
@@ -71,29 +77,29 @@ public class ReactorGenerator {
 		
 		String strRLTable = null;
 		try {
-			strRLTable = Files.readAllLines(Paths.get(folder, "RLTable.txt")).get(0);
+			strRLTable = Files.readAllLines(Paths.get("./Builds/", "RLTable.txt")).get(0);
 			RL.read(strRLTable);
 		} catch(Exception e) {
 			
 		}
 		
-		for(int i = 0; i < RL_ITERATIONS; i++) {
-			Action action = RL.RLcalc(reactor, TARGET_HEAT, ACCURACY, RL_DEPTH);
+		for(int i = 0; i < OPTIMISATION_ITERATIONS; i++) {
+			Action action = RL.RLcalc(reactor, TARGET_HEAT, ACCURACY, OPTIMISATION_DEPTH);
 			action.submit(reactor);
-			Util.prl(Util.round((i / (float) RL_ITERATIONS) * 100, 1) + "%");
+			Util.prl(Util.round((i / (float) OPTIMISATION_ITERATIONS) * 100, 1) + "%");
 		}
 		
 		old.print(TARGET_HEAT);
 		reactor.print(TARGET_HEAT);
 		
-	    write(folder, "unoptimized.json", JSON.toJson(old));
-	    write(folder, "optimized.json", JSON.toJson(reactor));
+	    write("./Builds/unoptimized.json", JSON.toJson(old));
+	    write(OUTPUT_FILE, JSON.toJson(reactor));
 	    
-	    write(folder, "RLTable.txt", RL.RLTable());
+	    write("./Builds/RLTable.txt", RL.RLTable());
 	}
 
-	static void write(String folder, String fileName, Object data) throws IOException {
-		Path path = Paths.get(folder, fileName);
+	static void write(String filePath, Object data) throws IOException {
+		Path path = Paths.get(filePath);
 	    byte[] strToBytes = data.toString().getBytes();
 	    Files.write(path, strToBytes);
 	}

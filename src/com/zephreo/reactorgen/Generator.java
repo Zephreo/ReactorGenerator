@@ -19,7 +19,7 @@ public class Generator {
 	     public void run() {
 	 		float bestScore = -9999;
 	 		
-	 		for(int j = 0; j < ReactorGenerator.ITERATIONS; j++) {
+	 		for(int j = 0; j < ReactorGenerator.RANDOM_ITERATIONS; j++) {
 	 			Reactor reactor = new Reactor(generator);
 	 			reactor.addRandomCells();
 	 			reactor.addRandomBlocks(BlockType.MODERATOR.toBlock());
@@ -38,7 +38,7 @@ public class Generator {
 	     }
 	     
 	     public float getProgress() {
-	    	 return (float) progress / ReactorGenerator.ITERATIONS;
+	    	 return (float) progress / ReactorGenerator.RANDOM_ITERATIONS;
 	     }
 	 }
 

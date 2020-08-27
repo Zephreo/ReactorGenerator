@@ -429,30 +429,30 @@ public class Reactor {
 		//NaN if reactor cells are 0.
 		res.efficiency = (float) (res.genericPower / res.reactorCells);
 		
-		res.score = res.efficiency * ReactorGenerator.MUTLTIPLIER_EFFICIENCY
-				+ res.symmetryFactor * ReactorGenerator.MUTLTIPLIER_SYMMETRY
-				+ (res.genericPower / 10) * ReactorGenerator.MUTLTIPLIER_POWER
-				+ (res.genericHeat / 10) * ReactorGenerator.MUTLTIPLIER_HEAT
-				+ res.air * ReactorGenerator.MUTLTIPLIER_AIR;
+		res.score = res.efficiency * ReactorGenerator.MULTIPLIER_EFFICIENCY
+				+ res.symmetryFactor * ReactorGenerator.MULTIPLIER_SYMMETRY
+				+ (res.genericPower / 10) * ReactorGenerator.MULTIPLIER_POWER
+				+ (res.genericHeat / 10) * ReactorGenerator.MULTIPLIER_HEAT
+				+ res.air * ReactorGenerator.MULTIPLIER_AIR;
 		
 		if(res.genericPower < ReactorGenerator.MIN_POWER) {
-			res.score -= ReactorGenerator.MIN_POWER - res.genericPower;
+			res.score -= (ReactorGenerator.MIN_POWER - res.genericPower) * 10;
 		}
 		
 		if(res.genericHeat < ReactorGenerator.MIN_HEAT) {
-			res.score -= ReactorGenerator.MIN_HEAT - res.genericHeat;
+			res.score -= (ReactorGenerator.MIN_HEAT - res.genericHeat) * 10;
 		}
 		
 		if(res.efficiency < ReactorGenerator.MIN_EFFICIENCY) {
-			res.score -= (ReactorGenerator.MIN_EFFICIENCY - res.efficiency) * (ReactorGenerator.MUTLTIPLIER_EFFICIENCY + 1);
+			res.score -= (ReactorGenerator.MIN_EFFICIENCY - res.efficiency) * 10;
 		}
 		
 		if(res.symmetryFactor < ReactorGenerator.MIN_SYMMETRY) {
-			res.score -= ReactorGenerator.MIN_SYMMETRY - res.symmetryFactor;
+			res.score -= (ReactorGenerator.MIN_SYMMETRY - res.symmetryFactor) * 10;
 		}
 		
 		if(res.air > ReactorGenerator.MAX_AIR) {
-			res.score -= res.air - ReactorGenerator.MAX_AIR;
+			res.score -= (res.air - ReactorGenerator.MAX_AIR) * 10;
 		}
 		
 		//Penalise heat being below target

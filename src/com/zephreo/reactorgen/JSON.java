@@ -68,9 +68,9 @@ public class JSON {
 		blocks.add(blockName);
 	}
 
-	static Reactor fromJSON(String folder, String fileName) throws Exception {
+	static Reactor fromJSON(String filePath) throws Exception {
 		JSONParser parser = new JSONParser();
-		JSONObject root = (JSONObject) parser.parse(new FileReader(folder + fileName));
+		JSONObject root = (JSONObject) parser.parse(new FileReader(filePath));
 
 		JSONArray blocksJSON = (JSONArray) root.get("CompressedReactor");
 
