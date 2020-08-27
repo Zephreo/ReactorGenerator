@@ -3,6 +3,8 @@ package com.zephreo.reactorgen.location;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.json.simple.JSONObject;
+
 public class Location {
 	
 	public static final HashSet<Location> RELATIVE_X = new HashSet<Location>();
@@ -114,5 +116,12 @@ public class Location {
 	public static Location parseLocation(String str) {
 		String[] coords = str.split(",");
 		return new Location(Integer.parseInt(coords[0]) - 1, Integer.parseInt(coords[1]) - 1, Integer.parseInt(coords[2]) - 1);
+	}
+
+	public static Location parseLocation(JSONObject jsonObject) {
+		int x = ((Double) jsonObject.get("X")).intValue();
+		int y = ((Double) jsonObject.get("Y")).intValue();
+		int z = ((Double) jsonObject.get("Z")).intValue();
+		return new Location(x - 1, y - 1, z - 1);
 	}
 }

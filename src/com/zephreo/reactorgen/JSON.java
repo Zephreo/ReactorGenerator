@@ -2,6 +2,7 @@ package com.zephreo.reactorgen;
 
 import java.io.FileReader;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -67,26 +68,123 @@ public class JSON {
 		blockName.put(block.toString(), coolerArray);
 		blocks.add(blockName);
 	}
+	
+	enum SupportedVersion {
+		Ver1_2_18(1, 2, 18),
+		Ver1_2_25(1, 2, 25);
+		
+		int major;
+		int minor;
+		int build;
+		
+		SupportedVersion(int major, int minor, int build) {
+			this.major = major;
+			this.minor = minor;
+			this.build = build;
+		}
+		
+		static boolean isSupported(int major, int minor, int build) {
+			return fromNum(major, minor, build) != null;
+		}
+		
+		static boolean isSupported(int major, int minor) {
+			for(SupportedVersion version : SupportedVersion.values()) {
+				if(version.major == major && version.minor == minor) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		static boolean isSupported(int major) {
+			for(SupportedVersion version : SupportedVersion.values()) {
+				if(version.major == major) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		static SupportedVersion fromNum(int major, int minor, int build) {
+			for(SupportedVersion version : SupportedVersion.values()) {
+				if(version.major == major && version.minor == minor && version.build == build) {
+					return version;
+				}
+			}
+			return null;
+		}
+		
+		static SupportedVersion closest(int major, int minor, int build) {
+			SupportedVersion closest = null;
+			int bestDiff = Integer.MAX_VALUE;
+			for(SupportedVersion version : SupportedVersion.values()) {
+				if(version.major == major && version.minor == minor) {
+					int diff = Math.abs(build - version.build);
+					if(diff < bestDiff) {
+						bestDiff = diff;
+						closest = version;
+					}
+				}
+			}
+			return closest;
+		}
+	}
 
 	static Reactor fromJSON(String filePath) throws Exception {
 		JSONParser parser = new JSONParser();
 		JSONObject root = (JSONObject) parser.parse(new FileReader(filePath));
-
-		JSONArray blocksJSON = (JSONArray) root.get("CompressedReactor");
-
-		Location size = Location.parseLocation((String) root.get("InteriorDimensions")).add(new Location(1, 1, 1));
-
-		HashMap<Location, Block> blocks = new HashMap<Location, Block>();
-		for(Object blockObj : blocksJSON) {
-			JSONObject blockJSON = (JSONObject) blockObj;
-			String name = blockJSON.keySet().toArray()[0].toString();
-			JSONArray locations = (JSONArray) blockJSON.get(name);
-			Block block = Block.parse(name);
-			for(Object locObj : locations) {
-				blocks.put(Location.parseLocation((String) locObj), block);
-			}
+		
+		JSONObject version = (JSONObject) root.get("SaveVersion");
+		int major = ((Long) version.get("Major")).intValue();
+		int minor = ((Long) version.get("Minor")).intValue();
+		int build = ((Long) version.get("Build")).intValue();
+		if(!SupportedVersion.isSupported(major)) {
+			Util.prl("[ERROR] Input json version is on a different major version");
+		} else if(!SupportedVersion.isSupported(major, minor)) {
+			Util.prl("[ERROR] Input json version is on a different minor version");
+		} else if(!SupportedVersion.isSupported(major, minor, build)) {
+			Util.prl("[WARNING] Input json version possibly not supported (on a different build)");
 		}
 		
+		Location size = null;
+		HashMap<Location, Block> blocks = null;
+		
+		SupportedVersion temp = SupportedVersion.closest(major, minor, build);
+		
+		switch(temp) {
+		case Ver1_2_18:
+			JSONArray blocksArray = (JSONArray) root.get("CompressedReactor");
+			
+			size = Location.parseLocation((String) root.get("InteriorDimensions")).add(new Location(1, 1, 1));
+
+			blocks = new HashMap<Location, Block>();
+			for(Object blockObj : blocksArray) {
+				JSONObject blockJSON = (JSONObject) blockObj;
+				String name = blockJSON.keySet().toArray()[0].toString();
+				JSONArray locations = (JSONArray) blockJSON.get(name);
+				Block block = Block.parse(name);
+				for(Object locObj : locations) {
+					blocks.put(Location.parseLocation((String) locObj), block);
+				}
+			}
+			break;
+		case Ver1_2_25:
+			JSONObject blocksObject = (JSONObject) root.get("CompressedReactor");
+			
+			size = Location.parseLocation((JSONObject) root.get("InteriorDimensions")).add(new Location(1, 1, 1));
+
+			blocks = new HashMap<Location, Block>();
+			for(Object blockObj : blocksObject.keySet()) {
+				String blockName = (String) blockObj;
+				JSONArray locations = (JSONArray) blocksObject.get(blockName);
+				Block block = Block.parse(blockName);
+				for(Object locObj : locations) {
+					blocks.put(Location.parseLocation((JSONObject) locObj), block);
+				}
+			}
+			break;
+		}
+
 		Reactor r = new Reactor(new Generator(size));
 		r.addBlocks(blocks);
 		

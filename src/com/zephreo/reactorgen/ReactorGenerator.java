@@ -23,7 +23,7 @@ public class ReactorGenerator {
 	static int OPTIMISATION_ITERATIONS;
 	static int OPTIMISATION_DEPTH;
 	
-	static boolean RL_LEARNING_MODE = true;
+	static boolean RL_LEARNING_MODE = false;
 	
 	static Location SIZE;
 	
@@ -91,7 +91,7 @@ public class ReactorGenerator {
 		while(progress < 1) {
 			Thread.sleep(REFRESH_RATE);
 			progress = optimiser.getProgress();
-			Util.prl(Util.round(progress, 1) + "%");
+			Util.prl(Util.round(progress, 2) + "%");
 		}
 		thread.join();
 		

@@ -67,7 +67,7 @@ public class Generator {
 			for(Thread thread : threads.keySet()) {
 				overallProgress += threads.get(thread).getProgress() / threads.size();
 			}
-			Util.prl(Util.round(overallProgress * 100, 1) + "%");
+			Util.prl(Util.round(overallProgress * 100, 2) + "%");
 		}
 		
 		for(Thread thread : threads.keySet()) {
