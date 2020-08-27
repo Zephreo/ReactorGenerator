@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import com.zephreo.reactorgen.RL.Action;
+import com.zephreo.reactorgen.RL.ReactorOptimiser;
 import com.zephreo.reactorgen.location.Location;
 import com.zephreo.reactorgen.material.Cooler.CoolerType;
 
@@ -25,7 +25,7 @@ public class ReactorGenerator {
 	
 	static boolean RL_LEARNING_MODE = true;
 	
-	static Location SIZE = new Location(3, 3, 3);
+	static Location SIZE;
 	
 	static double ACCURACY;
 	
@@ -78,22 +78,29 @@ public class ReactorGenerator {
 		
 		String strRLTable = null;
 		try {
-			strRLTable = Files.readAllLines(Paths.get("./Builds/", "RLTable.txt")).get(0);
+			strRLTable = Files.readAllLines(Paths.get("./RLTable.txt")).get(0);
 			RL.read(strRLTable);
 		} catch(Exception e) {
 			
 		}
 		
-		for(int i = 0; i < OPTIMISATION_ITERATIONS; i++) {
-			Action action = RL.RLcalc(reactor, TARGET_HEAT, ACCURACY, OPTIMISATION_DEPTH);
-			action.submit(reactor);
-			Util.prl(Util.round((i / (float) OPTIMISATION_ITERATIONS) * 100, 1) + "%");
+		float progress = 0;
+		ReactorOptimiser optimiser = new ReactorOptimiser(reactor);
+		Thread thread = new Thread(optimiser);
+		thread.start();
+		while(progress < 1) {
+			Thread.sleep(REFRESH_RATE);
+			progress = optimiser.getProgress();
+			Util.prl(Util.round(progress, 1) + "%");
 		}
+		thread.join();
+		
+		reactor = optimiser.getResult();
 		
 		old.print(TARGET_HEAT);
 		reactor.print(TARGET_HEAT);
 		
-	    //write("./Builds/unoptimized.json", JSON.toJson(old));
+	    //write("./unoptimized.json", JSON.toJson(old));
 	    write(OUTPUT_FILE, JSON.toJson(reactor));
 	    
 	    write("./RLTable.txt", RL.RLTable());

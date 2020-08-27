@@ -252,4 +252,31 @@ public class RL {
 	    	return blockChanged.toString() + "_" + loc.toString();
 	    }
 	}
+	
+	public static class ReactorOptimiser implements Runnable {
+	     private volatile Reactor reactor;
+	     
+	     private volatile int progress = 0;
+	     
+	     public ReactorOptimiser(Reactor reactor) {
+	    	 this.reactor = reactor;
+	     }
+	
+	     @Override
+	     public void run() {
+	 		for(int i = 0; i < ReactorGenerator.OPTIMISATION_ITERATIONS; i++) {
+				Action action = RLcalc(reactor, ReactorGenerator.TARGET_HEAT, ReactorGenerator.ACCURACY, ReactorGenerator.OPTIMISATION_DEPTH);
+				action.submit(reactor);
+				progress++;
+			}
+	     }
+	
+	     public Reactor getResult() {
+	         return reactor;
+	     }
+	     
+	     public float getProgress() {
+	    	 return (float) progress / ReactorGenerator.OPTIMISATION_ITERATIONS;
+	     }
+	 }
 }

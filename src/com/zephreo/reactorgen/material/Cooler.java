@@ -49,6 +49,7 @@ public interface Cooler extends Block {
 		}
 
 		public static CoolerType fromString(String str) {
+			
 			for(CoolerType enumValue : CoolerType.values()) {
 		        if(enumValue.toBlock().toString().equalsIgnoreCase(str) || enumValue.name().equalsIgnoreCase(str)) {
 		            return enumValue;
@@ -87,7 +88,7 @@ public interface Cooler extends Block {
 			
 			@Override
 			public String toString() {
-				return Util.toTitleCase(getCoolerType().toString()).replace("_", "");
+				return Util.toTitleCase(getCoolerType().name()).replace("_", "");
 			}
 			
 			@Override    

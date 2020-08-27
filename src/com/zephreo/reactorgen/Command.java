@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.commons.cli.*;
 
+import com.zephreo.reactorgen.location.Location;
 import com.zephreo.reactorgen.material.Cooler.CoolerType;
 
 public class Command {
@@ -35,7 +36,7 @@ public class Command {
         new CustomOption("minEfficiency", OptionType.MIN_EFFICIENCY, 0, null, Float.class, 1, true, "decrements score if efficiency is under this amount");
         new CustomOption("minSymmetry", OptionType.MIN_SYMMETRY, 0, 1, Float.class, 0.4, true, "decrements score if symmetry is under this amount");
         
-        new CustomOption("d", "disable", OptionType.DISABLED_COOLERS, String.class, null, true, "What coolers the generator should never use");
+        new CustomOption("d", "disable", OptionType.DISABLED_COOLERS, String.class, null, true, "What coolers the generator should never use", Option.UNLIMITED_VALUES);
 	}
 	
 	enum OptionType {
@@ -69,12 +70,13 @@ public class Command {
             cmd = parser.parse(OPTIONS, args);
             List<String> remArgs = cmd.getArgList();
             for(CustomOption option : ARGS) {
-            	option.apply();
+            	option.apply(cmd);
             }
-            if(ReactorGenerator.INPUT_FILE != null) {
-            	ReactorGenerator.SIZE.x = Integer.parseInt(remArgs.get(0));
-                ReactorGenerator.SIZE.y = Integer.parseInt(remArgs.get(1));
-                ReactorGenerator.SIZE.z = Integer.parseInt(remArgs.get(2));
+            if(ReactorGenerator.INPUT_FILE == null) {
+            	int x = Integer.parseInt(remArgs.get(0));
+                int y = Integer.parseInt(remArgs.get(1));
+                int z = Integer.parseInt(remArgs.get(2));
+                ReactorGenerator.SIZE = new Location(x, y, z);
             }
         } catch (ParseException e) {
             System.out.println(e.getMessage());
@@ -92,8 +94,8 @@ public class Command {
 		String value;
 		OptionType op;
 		
-		void apply() throws Exception {
-			String returnVal = OPTIONS.getOption(name).getValue();
+		void apply(CommandLine cmd) throws Exception {
+			String returnVal = cmd.getOptionValue(name);
 			if(returnVal == null && defaultValue != null) {
 				returnVal = defaultValue.toString();
 			}
@@ -165,10 +167,12 @@ public class Command {
 				ReactorGenerator.ACCURACY = Float.parseFloat(returnVal);
 				break;
 			case DISABLED_COOLERS:
-				String[] coolers = OPTIONS.getOption(name).getValues();
+				String[] coolers = cmd.getOptionValues(name);
 				if(coolers != null) {
 					for(String strCooler : coolers) {
-						Reactor.DISABLED_COOLERS.add(CoolerType.fromString(strCooler));
+						for(String cooler : strCooler.split(",")) {
+							Reactor.DISABLED_COOLERS.add(CoolerType.fromString(cooler));
+						}
 					}
 				}
 				break;
@@ -226,6 +230,9 @@ public class Command {
 			option.setRequired(required);
 			option.setType(type);
 			option.setArgs(numArgs);
+			if(numArgs != 1) {
+				
+			}
 	        OPTIONS.addOption(option);
 	        ARGS.add(this);
 		}
