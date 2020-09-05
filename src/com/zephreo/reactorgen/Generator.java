@@ -13,17 +13,17 @@ public class Generator {
 	public static class RandomGenerator implements Runnable {
 	     private volatile Reactor bestReactor = null;
 	     private volatile int progress = 0;
-	     Generator generator;
+	     Location size;
 	
 	     @Override
 	     public void run() {
 	 		float bestScore = -9999;
 	 		
 	 		for(int j = 0; j < ReactorGenerator.RANDOM_ITERATIONS; j++) {
-	 			Reactor reactor = new Reactor(generator);
+	 			Reactor reactor = new Reactor(size);
 	 			reactor.addRandomCells();
 	 			reactor.addRandomBlocks(BlockType.MODERATOR.toBlock());
-	 			reactor.addRandomCoolers(ReactorGenerator.SIZE.count() * 4);
+	 			reactor.addRandomCoolers(size.count() * 4);
 	 			float score = reactor.evaluate(ReactorGenerator.TARGET_HEAT).score;
 	 			if(score > bestScore) {
 	 				bestScore = score;
@@ -54,7 +54,7 @@ public class Generator {
 		
 		for(int i = 0; i < ReactorGenerator.THREAD_COUNT; i++) {
 			RandomGenerator gen = new RandomGenerator();
-			gen.generator = this;
+			gen.size = size;
 			Thread thread = new Thread(gen);
 			thread.start();
 			threads.put(thread, gen);

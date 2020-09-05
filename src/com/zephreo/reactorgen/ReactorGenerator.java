@@ -31,16 +31,6 @@ public class ReactorGenerator {
 	
 	static int REFRESH_RATE = 200;
 	
-	/*
-	static {
-		Reactor.DISABLED_COOLERS.addAll(Arrays.asList(
-				CoolerType.ACTIVE_CRYOTHIUM,
-				CoolerType.ACTIVE_WATER,
-				CoolerType.ENDERIUM,
-				CoolerType.CRYOTHEUM));
-		CoolerType.setup(Reactor.DISABLED_COOLERS);
-	} //*/
-	
 	//Score multipliers
 	static float MULTIPLIER_AIR;
 	static float MULTIPLIER_POWER; 

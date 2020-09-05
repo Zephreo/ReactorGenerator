@@ -37,7 +37,7 @@ public class JSON {
 		
 		out.put("CompressedReactor", blocks);
 		 
-		out.put("InteriorDimensions", reactor.generator.size.toString(true));
+		out.put("InteriorDimensions", reactor.size.toString(true));
 		
 		JSONObject fuel = new JSONObject();
 		fuel.put("Name", "LEU-235 Oxide");
@@ -114,16 +114,17 @@ public class JSON {
 			return null;
 		}
 		
+		private static final int MAX_MINOR_VERS = 100;  //The maximum number minor could get up to before incrementing a major version
+		private static final int MAX_BUILD_VERS = 1000; //The maximum number build could get up to before incrementing a minor version
+		
 		static SupportedVersion closest(int major, int minor, int build) {
 			SupportedVersion closest = null;
 			int bestDiff = Integer.MAX_VALUE;
 			for(SupportedVersion version : SupportedVersion.values()) {
-				if(version.major == major && version.minor == minor) {
-					int diff = Math.abs(build - version.build);
-					if(diff < bestDiff) {
-						bestDiff = diff;
-						closest = version;
-					}
+				int diff = Math.abs(build - version.build) + MAX_BUILD_VERS * Math.abs(minor - version.minor) + MAX_MINOR_VERS * MAX_BUILD_VERS * Math.abs(major - version.major);
+				if(diff < bestDiff) {
+					bestDiff = diff;
+					closest = version;
 				}
 			}
 			return closest;
@@ -141,7 +142,7 @@ public class JSON {
 		if(!SupportedVersion.isSupported(major)) {
 			Util.prl("[ERROR] Input json version is on a different major version");
 		} else if(!SupportedVersion.isSupported(major, minor)) {
-			Util.prl("[ERROR] Input json version is on a different minor version");
+			Util.prl("[WARNING] Input json version is on a different minor version");
 		} else if(!SupportedVersion.isSupported(major, minor, build)) {
 			Util.prl("[WARNING] Input json version possibly not supported (on a different build)");
 		}
@@ -185,7 +186,7 @@ public class JSON {
 			break;
 		}
 
-		Reactor r = new Reactor(new Generator(size));
+		Reactor r = new Reactor(size);
 		r.addBlocks(blocks);
 		
 		return r;

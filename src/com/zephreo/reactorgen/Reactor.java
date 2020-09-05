@@ -16,7 +16,7 @@ import com.zephreo.reactorgen.material.Cooler.CoolerType;
 
 public class Reactor {
 	
-	Generator generator;
+	Location size;
 	
 	HashMap<Location, Block> blocks = new HashMap<Location, Block>();
 	
@@ -26,9 +26,9 @@ public class Reactor {
 	
 	public void fillEmpty() {
 		//Setup reactor defaults
-		for(int x = 0; x < generator.size.x; x++) {
-			for(int y = 0; y < generator.size.y; y++) {
-				for(int z = 0; z < generator.size.z; z++) {
+		for(int x = 0; x < size.x; x++) {
+			for(int y = 0; y < size.y; y++) {
+				for(int z = 0; z < size.z; z++) {
 					Location loc = new Location(x, y, z);
 					blocks.put(loc, BlockType.AIR.toBlock());
 				}
@@ -36,14 +36,14 @@ public class Reactor {
 		}
 	}
 	
-	public Reactor(Generator generator) {
-		this.generator = generator;
+	public Reactor(Location size) {
+		this.size = size;
 		fillEmpty();
 		//rnd.setSeed(123);
 	}
 	
-	public Reactor(Generator generator, HashMap<Location, Block> blocks) {
-		this.generator = generator;
+	public Reactor(Location size, HashMap<Location, Block> blocks) {
+		this.size = size;
 		this.blocks = blocks;
 	}
 	
@@ -67,7 +67,7 @@ public class Reactor {
 	}
 	
 	public void addRandomBlocks(Block block) {
-		addRandomBlocks(0, generator.size.count(), block);
+		addRandomBlocks(0, size.count(), block);
 	}
 	
 	public void addRandomBlocks(int min, int max, Block block) {
@@ -134,26 +134,26 @@ public class Reactor {
 		default:
 			break;
 		}
-		return new QLocation(generator.size);
+		return new QLocation(size);
 	}
 	
 	QLocation getAll() {
-		return new QLocation(generator.size, new QInt(QIntType.RANGE, 0, generator.size.x), new QInt(QIntType.RANGE, 0, generator.size.y), new QInt(QIntType.RANGE, 0, generator.size.z));
+		return new QLocation(size, new QInt(QIntType.RANGE, 0, size.x), new QInt(QIntType.RANGE, 0, size.y), new QInt(QIntType.RANGE, 0, size.z));
 	}
 	
 	QLocation getEdges() {
 		//X-Y Edges
-		QLocation edges = new QLocation(generator.size, new QInt(QIntType.RANGE, 0, generator.size.x), new QInt(QIntType.RANGE, 0, generator.size.y), new QInt(0, generator.size.z - 1));
+		QLocation edges = new QLocation(size, new QInt(QIntType.RANGE, 0, size.x), new QInt(QIntType.RANGE, 0, size.y), new QInt(0, size.z - 1));
 		//X-Z Edges
-		edges.add(new QLocation(generator.size, new QInt(QIntType.RANGE, 0, generator.size.x), new QInt(0, generator.size.y - 1), new QInt(QIntType.RANGE, 0, generator.size.z)), true);
+		edges.add(new QLocation(size, new QInt(QIntType.RANGE, 0, size.x), new QInt(0, size.y - 1), new QInt(QIntType.RANGE, 0, size.z)), true);
 		//Y-Z Edges
-		edges.add(new QLocation(generator.size, new QInt(0, generator.size.x - 1), new QInt(QIntType.RANGE, 0, generator.size.y), new QInt(QIntType.RANGE, 0, generator.size.z)), true);
+		edges.add(new QLocation(size, new QInt(0, size.x - 1), new QInt(QIntType.RANGE, 0, size.y), new QInt(QIntType.RANGE, 0, size.z)), true);
 		
 		return edges;
 	}
 	
 	QLocation getCorners() {
-		return new QLocation(generator.size, new QInt(0, generator.size.x - 1), new QInt(0, generator.size.y - 1), new QInt(0, generator.size.z - 1));
+		return new QLocation(size, new QInt(0, size.x - 1), new QInt(0, size.y - 1), new QInt(0, size.z - 1));
 	}
 	
 	QLocation getBlockAdjTo(CoolerType block) {
@@ -173,7 +173,7 @@ public class Reactor {
 	}
 	
 	QLocation getBlock(Block block) {
-		QLocation out = new QLocation(generator.size);
+		QLocation out = new QLocation(size);
 		for(Location loc : blocks.keySet()) {
 			if(blocks.get(loc).equals(block)) {
 				out.add(loc);
@@ -183,7 +183,7 @@ public class Reactor {
 	}
 	
 	public Location getRandomLoc() {
-		return new Location(rnd.nextInt(generator.size.x), rnd.nextInt(generator.size.y), rnd.nextInt(generator.size.z));
+		return new Location(rnd.nextInt(size.x), rnd.nextInt(size.y), rnd.nextInt(size.z));
 	}
 	
 	public void addBlock(Block block, Location loc) {
@@ -192,8 +192,8 @@ public class Reactor {
 	}
 	
 	public void validateAdj(Location loc) {
-		for(Location adjLoc : loc.getAdjacent(generator.size)) {
-			if(adjLoc.withinBounds(generator.size) && !validate(adjLoc)) {
+		for(Location adjLoc : loc.getAdjacent(size)) {
+			if(adjLoc.withinBounds(size) && !validate(adjLoc)) {
 				addBlock(BlockType.AIR.toBlock(), adjLoc);
 			}
 		}
@@ -287,7 +287,7 @@ public class Reactor {
 	
 	public int adjacentTo(Location loc, Block block) {
 		int num = 0;
-		for(Location adjPos : loc.getAdjacent(generator.size)) {
+		for(Location adjPos : loc.getAdjacent(size)) {
 			if(blocks.getOrDefault(adjPos, BlockType.CASING.toBlock()).equals(block)) {
 				num++;
 			}
@@ -300,7 +300,7 @@ public class Reactor {
 		for(Location direction : Location.RELATIVE_ADJ) {
 			for(int i = 1; i < 6; i++) {
 				Location adjLoc = loc.clone().add(direction.clone().multiply(i));
-				if(adjLoc.withinBounds(generator.size)) {
+				if(adjLoc.withinBounds(size)) {
 					if(blocks.get(adjLoc).getType() == BlockType.FUEL_CELL) {
 						count++;
 						break;
@@ -389,20 +389,20 @@ public class Reactor {
 		}
         
 		//Symmetry
-		for(int x = 0; x < generator.size.x; x++) {
-			for(int y = 0; y < generator.size.y; y++) {
-				for(int z = 0; z < generator.size.z; z++) {
+		for(int x = 0; x < size.x; x++) {
+			for(int y = 0; y < size.y; y++) {
+				for(int z = 0; z < size.z; z++) {
 					Location xyz = new Location(x, y, z);
 					//X
-					if(blocks.get(xyz) == blocks.get(new Location(generator.size.x - 1 - x, y, z))) {
+					if(blocks.get(xyz) == blocks.get(new Location(size.x - 1 - x, y, z))) {
 						res.symmetryFactor += 1;
 					}
 					//Y
-					if(blocks.get(xyz) == blocks.get(new Location(x, generator.size.y - 1 - y, z))) {
+					if(blocks.get(xyz) == blocks.get(new Location(x, size.y - 1 - y, z))) {
 						res.symmetryFactor += 1;
 					}
-					//Zgenerator.size.x - 1 - x
-					if(blocks.get(xyz) == blocks.get(new Location(x, y, generator.size.z - 1 - z))) {
+					//Zsize.x - 1 - x
+					if(blocks.get(xyz) == blocks.get(new Location(x, y, size.z - 1 - z))) {
 						res.symmetryFactor += 1;
 					}
 					//Swap x - y
@@ -421,7 +421,7 @@ public class Reactor {
             }
         }
 		//Normalise
-		res.symmetryFactor = res.symmetryFactor / (generator.size.count() * 6);
+		res.symmetryFactor = res.symmetryFactor / (size.count() * 6);
 		
 		//The maximum base heat a fuel can have for safe operation
 		res.maxHeat = res.totalCooling / res.genericHeat;
@@ -465,9 +465,9 @@ public class Reactor {
 
 	public void print(int targetHeat) {
 		Util.pr("START-----------------------------------------------------------\n");
-		for(int x = 0; x < generator.size.x; x++) {
-			for(int y = 0; y < generator.size.y; y++) {
-				for(int z = 0; z < generator.size.z; z++) {
+		for(int x = 0; x < size.x; x++) {
+			for(int y = 0; y < size.y; y++) {
+				for(int z = 0; z < size.z; z++) {
 					Block block = blocks.get(new Location(x, y, z));
 					System.out.format("%15s", block.toString());
 				}
@@ -482,7 +482,7 @@ public class Reactor {
 	public Reactor clone() {
 		HashMap<Location, Block> blocks = new HashMap<Location, Block>();
 		blocks.putAll(this.blocks);
-		return new Reactor(generator, blocks);
+		return new Reactor(size, blocks);
 	}
 	
 	@Override    
